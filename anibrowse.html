@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>AniBrowse</title>
+<style>
+  :root{
+    --bg:#0b0d12;
+    --bg2:#12151c;
+    --card:#171b24;
+    --card-hi:#1e2330;
+    --line:#262c3a;
+    --text:#eef0f4;
+    --sub:#8b93a7;
+    --orange:#ff7a3d;   /* crunchyroll-ish */
+    --pink:#ff5da2;
+    --teal:#2fd1c5;
+    --blue:#5b9dff;
+    --purple:#b083ff;
+    --yellow:#ffd23f;
+    --green:#5fe089;
+    --red:#ff5c6c;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family: 'Segoe UI', ui-sans-serif, system-ui, -apple-system, Roboto, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{ max-width:900px; margin:0 auto; height:100dvh; display:flex; flex-direction:column; background:var(--bg); }
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 16px; border-bottom:1px solid var(--line); flex-shrink:0; gap:8px;
+  }
+  .logo{ font-weight:900; font-size:19px; letter-spacing:-0.5px; }
+  .logo span.g{
+    background:linear-gradient(90deg,var(--orange),var(--pink),var(--purple),var(--blue),var(--teal));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    background-size:200% auto; animation:hue 6s linear infinite;
+  }
+  @keyframes hue{ to{ background-position:200% center; } }
+  .acct{ display:flex; gap:6px; align-items:center; font-size:11px; color:var(--sub); }
+  .pill{
+    display:inline-flex; align-items:center; gap:5px; padding:5px 10px; border-radius:999px;
+    font-weight:700; font-size:11px; border:1px solid var(--line); background:var(--card); cursor:pointer;
+    color:var(--text);
+  }
+  .pill.on{ border-color:var(--green); color:var(--green); }
+  main{ flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  nav.tabs{
+    display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--line);
+    flex-shrink:0; padding-bottom:env(safe-area-inset-bottom); background:var(--bg2);
+  }
+  nav.tabs button{
+    background:none; border:none; color:var(--sub); display:flex; flex-direction:column;
+    align-items:center; gap:3px; padding:10px 4px 8px; font-size:10px; font-weight:800; cursor:pointer;
+  }
+  nav.tabs button.active{ color:var(--orange); }
+  nav.tabs button svg{ width:20px; height:20px; }
+  .section-title{ display:flex; align-items:center; gap:8px; margin:14px 16px 10px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; color:var(--sub);}
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; padding:0 16px 16px; }
+  .chip{
+    padding:8px 14px; border-radius:10px; font-weight:800; font-size:12.5px; color:#0a0a0a; cursor:pointer;
+    border:none; box-shadow:0 2px 0 rgba(0,0,0,.25); transition:transform .1s;
+  }
+  .chip:active{ transform:scale(.95); }
+  .grid{
+    display:grid; gap:12px; padding:0 16px 24px;
+    grid-template-columns:repeat(auto-fill, minmax(clamp(120px,26vw,160px), 1fr));
+  }
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; cursor:pointer;
+    transition:transform .15s, border-color .15s; position:relative;
+  }
+  .card:hover{ transform:translateY(-3px); border-color:var(--orange); }
+  .card .thumb{ position:relative; width:100%; aspect-ratio:2/3; background:#222; overflow:hidden; }
+  .card .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .badge{ position:absolute; font-size:10px; font-weight:800; padding:3px 6px; border-radius:6px; background:rgba(0,0,0,.65); }
+  .badge.score{ top:6px; right:6px; color:var(--green); }
+  .badge.wl{ top:6px; left:6px; color:var(--blue); }
+  .badge.like{ bottom:6px; left:6px; color:var(--pink); }
+  .card .title{ padding:8px 9px; font-size:12px; font-weight:700; line-height:1.3;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .backbar{ display:flex; align-items:center; gap:10px; padding:12px 16px; }
+  .iconbtn{ background:var(--card); border:1px solid var(--line); border-radius:10px; width:32px; height:32px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text); }
+  .sentinel{ display:flex; justify-content:center; padding:20px; color:var(--sub); font-size:12px; }
+  .spin{ animation:spin 1s linear infinite; width:20px; height:20px; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .err{ margin:16px; padding:12px; border:1px solid var(--red); border-radius:10px; color:var(--red); font-size:13px; }
+  .modal-wrap{ position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:50; display:flex; align-items:flex-end; justify-content:center; }
+  @media (min-width:640px){ .modal-wrap{ align-items:center; } }
+  .modal{ width:100%; max-width:560px; max-height:92dvh; overflow-y:auto; background:var(--bg2);
+    border:1px solid var(--line); border-radius:18px 18px 0 0; position:relative; }
+  @media (min-width:640px){ .modal{ border-radius:18px; } }
+  .modal .close{ position:absolute; top:10px; right:10px; z-index:2; background:rgba(0,0,0,.6); border:none;
+    color:#fff; width:30px; height:30px; border-radius:50%; cursor:pointer; }
+  .video-wrap{ position:relative; width:100%; aspect-ratio:16/9; background:#000; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .video-wrap img.bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.35; }
+  .video-wrap iframe{ position:relative; width:100%; height:100%; border:none; }
+  .playbtn{ position:relative; display:flex; align-items:center; gap:8px; padding:10px 18px; border-radius:999px;
+    background:var(--orange); color:#0a0a0a; font-weight:800; border:none; cursor:pointer; }
+  .modal-body{ padding:18px; }
+  .modal-body h2{ margin:0 0 8px; font-size:18px; }
+  .genretags{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+  .genretag{ font-size:10px; font-weight:800; padding:3px 8px; border-radius:6px; color:#0a0a0a; }
+  .meta{ display:flex; gap:14px; font-size:11.5px; color:var(--sub); font-weight:700; margin-bottom:10px; }
+  .synopsis{ font-size:13.5px; line-height:1.6; color:#cfd3dd; white-space:pre-line; margin-bottom:14px; }
+  .extlink{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--blue); text-decoration:none; margin-bottom:16px; }
+  .actionrow{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; border-top:1px solid var(--line); padding-top:14px; }
+  .actionbtn{ display:flex; flex-direction:column; align-items:center; gap:5px; padding:10px 0; border-radius:12px;
+    border:1px solid var(--line); background:var(--card); cursor:pointer; color:var(--sub); font-weight:800; font-size:10.5px; }
+  .actionbtn.dislike.on{ border-color:var(--red); color:var(--red); background:rgba(255,92,108,.12); }
+  .actionbtn.wl.on{ border-color:var(--blue); color:var(--blue); background:rgba(91,157,255,.12); }
+  .actionbtn.like.on{ border-color:var(--pink); color:var(--pink); background:rgba(255,93,162,.12); }
+  .swipe-stage{ position:relative; flex:1; min-height:0; background:#000; display:flex; align-items:center; justify-content:center; }
+  .swipe-stage img.bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.28; filter:blur(2px); }
+  .swipe-title{ position:absolute; top:10px; left:10px; right:56px; background:rgba(0,0,0,.6); padding:6px 10px; border-radius:8px; font-weight:800; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .swipe-actions{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:12px 14px; border-top:1px solid var(--line); flex-shrink:0; }
+  .settings{ padding:16px; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:11.5px; font-weight:800; color:var(--sub); margin-bottom:5px; }
+  .field input{ width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--text); font-size:13px; }
+  .field small{ display:block; color:var(--sub); margin-top:4px; font-size:11px; line-height:1.5; }
+  .btn{ padding:10px 16px; border-radius:10px; border:none; font-weight:800; font-size:13px; cursor:pointer; }
+  .btn.primary{ background:var(--orange); color:#0a0a0a; }
+  .btn.ghost{ background:var(--card); color:var(--text); border:1px solid var(--line); }
+  .card-box{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:14px; }
+  .divider{ height:1px; background:var(--line); margin:18px 0; }
+  .empty{ text-align:center; color:var(--sub); font-size:13px; padding:40px 20px; }
+  .mytabs{ display:flex; gap:8px; padding:14px 16px 4px; flex-wrap:wrap; }
+  .mytab{ padding:7px 12px; border-radius:999px; font-weight:800; font-size:11.5px; border:1px solid var(--line); background:none; cursor:pointer; }
+  a{ color:inherit; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">Ani<span class="g">Browse</span></div>
+    <div class="acct" id="acctBar"></div>
+  </header>
+  <main id="view"></main>
+  <nav class="tabs" id="tabs">
+    <button data-tab="browse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Browse</button>
+    <button data-tab="swipe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>Swipe</button>
+    <button data-tab="mylist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>My List</button>
+    <button data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.7.36 1.51.63 1.51 1z"/></svg>Settings</button>
+  </nav>
+</div>
+
+<script>
+/* ============================== CONFIG / STORAGE ============================== */
+const LS = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ localStorage.setItem(k, JSON.stringify(v)); },
+};
+const REDIRECT_URI = location.origin + location.pathname;
+const PALETTE = ['#ff7a3d','#ff5da2','#2fd1c5','#5b9dff','#b083ff','#ffd23f','#5fe089','#ff5c6c','#4dd0e1','#ffb86b'];
+const colorFor = s => PALETTE[Math.abs([...s].reduce((a,c)=>a+c.charCodeAt(0),0)) % PALETTE.length];
+
+let state = {
+  tab: 'browse',
+  genres: [],
+  genresError: null,
+  anilist: LS.get('al_auth', null),   // {token, user:{id,name,avatar}}
+  local: LS.get('local_prefs', { liked: [], disliked: [] }), // local-only likes/dislikes, keyed by anilist id
+  browse: { genre: null, items: [], page: 1, hasNext: true, loading: false, error: null },
+  swipe:  { genre: null, queue: [], idx: 0, playing: false, loading: false, error: null, seenPages: new Set() },
+  mylist: { tab: 'watchlist', al: [], loading: false, error: null },
+  modalMedia: null,
+};
+
+function persistPrefs(){ LS.set('local_prefs', state.local); }
+
+/* ============================== ANILIST ============================== */
+const AL_GQL = 'https://graphql.anilist.co';
+async function alQuery(query, variables, auth){
+  const headers = { 'Content-Type':'application/json', 'Accept':'application/json' };
+  if (auth && state.anilist?.token) headers['Authorization'] = 'Bearer ' + state.anilist.token;
+  const res = await fetch(AL_GQL, { method:'POST', headers, body: JSON.stringify({query, variables}) });
+  const json = await res.json();
+  if (json.errors) throw new Error(json.errors[0]?.message || 'AniList error');
+  return json.data;
+}
+const MEDIA_FIELDS = `
+  id idMal
+  title{ romaji english }
+  coverImage{ large color }
+  averageScore episodes status season seasonYear genres description
+  trailer{ id site thumbnail }
+`;
+const MEDIA_QUERY = `query($page:Int,$perPage:Int,$genre:String){
+  Page(page:$page, perPage:$perPage){
+    pageInfo{ hasNextPage }
+    media(genre:$genre, sort:POPULARITY_DESC, type:ANIME, isAdult:false){ ${MEDIA_FIELDS} }
+  }
+}`;
+function alAuthUrl(clientId){
+  return `https://anilist.co/api/v2/oauth/authorize?client_id=${encodeURIComponent(clientId)}&response_type=token`;
+}
+async function alFetchViewer(){
+  const data = await alQuery(`query{ Viewer{ id name avatar{ medium } } }`, {}, true);
+  return data.Viewer;
+}
+async function alAddToWatchlist(mediaId){
+  await alQuery(`mutation($id:Int){ SaveMediaListEntry(mediaId:$id, status:PLANNING){ id status } }`, { id: mediaId }, true);
+}
+async function alRemoveFromWatchlist(mediaId){
+  const data = await alQuery(`query($id:Int,$uid:Int){ MediaList(mediaId:$id, userId:$uid){ id } }`, { id: mediaId, uid: state.anilist.user.id }, true);
+  if (data.MediaList?.id) {
+    await alQuery(`mutation($id:Int){ DeleteMediaListEntry(id:$id){ deleted } }`, { id: data.MediaList.id }, true);
+  }
+}
+async function alToggleFavourite(mediaId){
+  await alQuery(`mutation($id:Int){ ToggleFavourite(animeId:$id){ anime{ nodes{ id } } } }`, { id: mediaId }, true);
+}
+async function alFetchPlanning(userId){
+  const data = await alQuery(`query($uid:Int){
+    MediaListCollection(userId:$uid, type:ANIME, status:PLANNING){
+      lists{ entries{ media{ ${MEDIA_FIELDS} } } }
+    }
+  }`, { uid: userId }, true);
+  const out = [];
+  (data.MediaListCollection?.lists || []).forEach(l => l.entries.forEach(e => out.push(e.media)));
+  return out;
+}
+
+/* ============================== HANDLE OAUTH REDIRECTS ============================== */
+(function handleRedirects(){
+  if (location.hash.includes('access_token')) {
+    const params = new URLSearchParams(location.hash.slice(1));
+    const token = params.get('access_token');
+    if (token) {
+      state.anilist = { token, user:null };
+      LS.set('al_auth', state.anilist);
+      history.replaceState(null, '', location.pathname + location.search);
+      alFetchViewer().then(u => { state.anilist.user = u; LS.set('al_auth', state.anilist); renderAcctBar(); }).catch(()=>{});
+    }
+  }
+})();
+
+/* ============================== HELPERS ============================== */
+function titleOf(m){ return m.title?.english || m.title?.romaji || 'Untitled'; }
+function trailerEmbed(t){
+  if (!t) return null;
+  if (t.site === 'youtube') return `https://www.youtube.com/embed/${t.id}?autoplay=1&rel=0&playsinline=1`;
+  if (t.site === 'dailymotion') return `https://www.dailymotion.com/embed/video/${t.id}?autoplay=1`;
+  return null;
+}
+function trailerWatch(t){
+  if (!t) return null;
+  if (t.site === 'youtube') return `https://www.youtube.com/watch?v=${t.id}`;
+  if (t.site === 'dailymotion') return `https://www.dailymotion.com/video/${t.id}`;
+  return null;
+}
+function stripHtml(html){
+  if (!html) return 'No synopsis available.';
+  return html.replace(/<br\s*\/?>/gi,'\n').replace(/<\/?(i|b|em|strong)>/gi,'').replace(/<[^>]*>/g,'').trim();
+}
+function isLiked(id){ return state.local.liked.includes(id); }
+function isDisliked(id){ return state.local.disliked.includes(id); }
+function esc(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============================== RENDER: ACCOUNT BAR ============================== */
+function renderAcctBar(){
+  const el = document.getElementById('acctBar');
+  const alOn = !!state.anilist;
+  el.innerHTML = `
+    <span class="pill ${alOn?'on':''}">${alOn ? ('AniList: ' + esc(state.anilist.user?.name || '…')) : 'AniList: off'}</span>
+  `;
+}
+
+/* ============================== RENDER ROOT ============================== */
+function render(){
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === state.tab));
+  renderAcctBar();
+  const view = document.getElementById('view');
+  if (state.genresError) {
+    view.innerHTML = `<div class="err">${esc(state.genresError)}</div>`;
+    return;
+  }
+  if (!state.genres.length) {
+    view.innerHTML = spinnerHtml();
+    return;
+  }
+  if (state.tab === 'browse') view.innerHTML = renderBrowse();
+  else if (state.tab === 'swipe') view.innerHTML = renderSwipe();
+  else if (state.tab === 'mylist') { view.innerHTML = renderMyList(); loadMyList(); }
+  else if (state.tab === 'settings') view.innerHTML = renderSettings();
+  if (state.modalMedia) renderModal();
+  bindDynamic();
+}
+function spinnerHtml(){
+  return `<div style="display:flex;align-items:center;justify-content:center;height:60vh;">
+    <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="#8b93a7" stroke-width="2"><circle cx="12" cy="12" r="9" stroke-dasharray="42" stroke-dashoffset="14"/></svg>
+  </div>`;
+}
+function chipsHtml(title, action){
+  return `<div class="section-title">${title}</div>
+  <div class="chips">${state.genres.map(g => `<button class="chip" style="background:${colorFor(g)}" data-action="${action}" data-genre="${esc(g)}">${esc(g)}</button>`).join('')}</div>`;
+}
+function cardHtml(m){
+  const wl = state.anilist ? null : null; // watchlist badge computed from mylist cache when available
+  return `<div class="card" data-action="openMedia" data-mediajson='${esc(JSON.stringify(m)).replace(/'/g,'&#39;')}'>
+    <div class="thumb" style="background:${m.coverImage?.color||'#222'}">
+      <img src="${m.coverImage?.large||''}" loading="lazy" alt="">
+      ${m.averageScore ? `<span class="badge score">${m.averageScore}%</span>` : ''}
+      ${isLiked(m.id) ? `<span class="badge like">♥ liked</span>` : ''}
+    </div>
+    <div class="title">${esc(titleOf(m))}</div>
+  </div>`;
+}
+
+/* ============================== BROWSE ============================== */
+function renderBrowse(){
+  const b = state.browse;
+  if (!b.genre) return chipsHtml('Choose a category', 'pickBrowseGenre');
+  return `
+    <div class="backbar">
+      <button class="iconbtn" data-action="backBrowse">←</button>
+      <span class="chip" style="background:${colorFor(b.genre)}">${esc(b.genre)}</span>
+    </div>
+    ${b.error ? `<div class="err">${esc(b.error)}</div>` : ''}
+    <div class="grid" id="browseGrid">${b.items.map(cardHtml).join('')}</div>
+    <div class="sentinel" id="browseSentinel">${b.loading ? spinnerHtml() : (!b.hasNext && b.items.length ? '— end of the list —' : '')}</div>
+  `;
+}
+async function fetchBrowsePage(genre, page){
+  const b = state.browse;
+  if (b.loading) return;
+  b.loading = true; b.error = null; render();
+  try {
+    const data = await alQuery(MEDIA_QUERY, { page, perPage: 24, genre });
+    b.items = page === 1 ? data.Page.media : [...b.items, ...data.Page.media];
+    b.hasNext = data.Page.pageInfo.hasNextPage;
+    b.page = page;
+  } catch(e) { b.error = 'Could not reach AniList: ' + e.message; }
+  b.loading = false; render(); setupBrowseObserver();
+}
+let browseObserver = null;
+function setupBrowseObserver(){
+  if (browseObserver) browseObserver.disconnect();
+  const el = document.getElementById('browseSentinel');
+  if (!el) return;
+  browseObserver = new IntersectionObserver(entries => {
+    const b = state.browse;
+    if (entries[0].isIntersecting && b.hasNext && !b.loading) fetchBrowsePage(b.genre, b.page + 1);
+  }, { rootMargin:'500px' });
+  browseObserver.observe(el);
+}
+
+/* ============================== SWIPE ============================== */
+function renderSwipe(){
+  const s = state.swipe;
+  if (!s.genre) return chipsHtml('Swipe mode — choose a category', 'pickSwipeGenre');
+  const cur = s.queue[s.idx];
+  return `
+    <div style="display:flex;flex-direction:column;height:100%;">
+      <div class="backbar" style="padding-bottom:0;">
+        <button class="iconbtn" data-action="backSwipe">←</button>
+        <span class="chip" style="background:${colorFor(s.genre)}">${esc(s.genre)}</span>
+      </div>
+      <div class="swipe-stage">
+        ${!cur ? (s.loading ? spinnerHtml() : `<div class="empty">No more anime in this category yet.</div>`) : `
+          <img class="bg" src="${cur.coverImage?.large||''}" alt="">
+          ${s.playing && trailerEmbed(cur.trailer) ? `<iframe src="${trailerEmbed(cur.trailer)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>` : `
+            <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding:0 24px;">
+              <img src="${cur.coverImage?.large||''}" style="width:110px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.5);">
+              <div style="font-weight:800;">${esc(titleOf(cur))}</div>
+              ${trailerEmbed(cur.trailer) ? `<button class="playbtn" data-action="playSwipe">▶ Play trailer</button>` : `<span style="color:#8b93a7;font-size:12px;">No trailer available</span>`}
+            </div>
+          `}
+          <div class="swipe-title">${esc(titleOf(cur))}</div>
+        `}
+      </div>
+      ${s.error ? `<div class="err">${esc(s.error)}</div>` : ''}
+      <div class="swipe-actions">
+        <button class="actionbtn" data-action="swipeSkip">⏭<br>Skip</button>
+        <button class="actionbtn dislike" data-action="swipeDislike">✕<br>Dislike</button>
+        <button class="actionbtn wl" data-action="swipeWatchlist">🔖<br>Watchlist</button>
+        <button class="actionbtn like" data-action="swipeLike">♥<br>Like</button>
+      </div>
+    </div>
+  `;
+}
+async function fetchSwipeMore(genre){
+  const s = state.swipe;
+  s.loading = true; s.error = null; render();
+  try {
+    let p = Math.floor(Math.random()*8)+1, tries=0;
+    while (s.seenPages.has(p) && tries<8){ p = Math.floor(Math.random()*8)+1; tries++; }
+    s.seenPages.add(p);
+    const data = await alQuery(MEDIA_QUERY, { page:p, perPage:20, genre });
+    const withT = data.Page.media.filter(m => trailerEmbed(m.trailer));
+    const rest = data.Page.media.filter(m => !trailerEmbed(m.trailer));
+    s.queue = [...s.queue, ...withT, ...rest];
+  } catch(e){ s.error = 'Could not reach AniList: ' + e.message; }
+  s.loading = false; render();
+}
+
+/* ============================== MY LIST ============================== */
+function renderMyList(){
+  const m = state.mylist;
+  const tabs = [['watchlist','Watchlist'],['liked','Liked'],['disliked','Disliked']];
+  let list = [];
+  if (m.tab === 'watchlist') list = m.al;
+  else if (m.tab === 'liked') list = state.local.liked.map(id => m.al.find(x=>x.id===id)).filter(Boolean);
+  else list = state.local.disliked.map(id => m.al.find(x=>x.id===id)).filter(Boolean);
+
+  return `
+    <div class="mytabs">${tabs.map(([k,l]) => `<button class="mytab" data-action="myTab" data-key="${k}" style="${m.tab===k?`background:${colorFor(l)};color:#0a0a0a;border-color:transparent;`:''}">${l}</button>`).join('')}</div>
+    ${!state.anilist ? `<div class="err" style="margin:14px 16px;">Connect AniList in Settings to sync your real watchlist. Likes/dislikes work locally either way.</div>` : ''}
+    ${m.error ? `<div class="err">${esc(m.error)}</div>` : ''}
+    ${m.loading ? spinnerHtml() : (list.length ? `<div class="grid">${list.map(cardHtml).join('')}</div>` : `<div class="empty">Nothing here yet.</div>`)}
+  `;
+}
+let myListLoaded = false;
+async function loadMyList(force){
+  if (myListLoaded && !force) return;
+  myListLoaded = true;
+  const m = state.mylist;
+  m.loading = true; m.error = null;
+  try {
+    if (state.anilist?.user) m.al = await alFetchPlanning(state.anilist.user.id);
+  } catch(e){ m.error = 'Could not load your list: ' + e.message; }
+  m.loading = false; render();
+}
+
+/* ============================== SETTINGS ============================== */
+function renderSettings(){
+  const alCid = LS.get('al_client_id', '');
+  return `
+    <div class="settings">
+      <div class="card-box">
+        <div style="font-weight:800;margin-bottom:6px;">AniList account</div>
+        <div class="field">
+          <label>AniList Client ID</label>
+          <input id="alCidInput" value="${esc(alCid)}" placeholder="e.g. 12345">
+          <small>Create one free at <b>anilist.co/settings/developer</b> → New Client. Set redirect URL to exactly:<br><code>${esc(REDIRECT_URI)}</code></small>
+        </div>
+        ${state.anilist ? `
+          <div style="margin-bottom:10px;font-size:12.5px;color:var(--sub);">Connected as <b style="color:var(--text);">${esc(state.anilist.user?.name||'…')}</b></div>
+          <button class="btn ghost" data-action="disconnectAL">Disconnect AniList</button>
+        ` : `<button class="btn primary" data-action="connectAL">Connect AniList</button>`}
+      </div>
+
+      <div class="divider"></div>
+      <div style="font-size:11.5px;color:var(--sub);line-height:1.6;">
+        Likes/dislikes are stored only in this browser (AniList has no public "dislike" concept). Liking an anime while AniList is connected also favourites it there. Watchlist adds/removes sync live to your real AniList "Plan to Watch" list.
+      </div>
+    </div>
+  `;
+}
+
+/* ============================== MODAL ============================== */
+function openModal(m){ state.modalMedia = m; render(); }
+function closeModal(){ state.modalMedia = null; render(); }
+function renderModal(){
+  let host = document.getElementById('modalHost');
+  if (!host) { host = document.createElement('div'); host.id = 'modalHost'; document.body.appendChild(host); }
+  const m = state.modalMedia;
+  const wl = isInWatchlist(m.id);
+  const embed = trailerEmbed(m.trailer);
+  const watchUrl = trailerWatch(m.trailer);
+  host.innerHTML = `
+    <div class="modal-wrap" data-action="closeModalBg">
+      <div class="modal" onclick="event.stopPropagation()">
+        <button class="close" data-action="closeModal">✕</button>
+        <div class="video-wrap" id="videoWrap">
+          <img class="bg" src="${m.coverImage?.large||''}">
+          ${embed ? `<button class="playbtn" data-action="playModal" style="position:relative;">▶ Play trailer</button>` : `<span style="position:relative;color:#8b93a7;background:rgba(0,0,0,.6);padding:8px 12px;border-radius:8px;font-size:12px;">No trailer available</span>`}
+        </div>
+        <div class="modal-body">
+          <h2>${esc(titleOf(m))}</h2>
+          <div class="genretags">${(m.genres||[]).map(g=>`<span class="genretag" style="background:${colorFor(g)}">${esc(g)}</span>`).join('')}</div>
+          <div class="meta">
+            ${m.averageScore ? `<span>★ ${m.averageScore}%</span>` : ''}
+            ${m.episodes ? `<span>${m.episodes} eps</span>` : ''}
+            ${m.seasonYear ? `<span>${m.season?m.season+' ':''}${m.seasonYear}</span>` : ''}
+          </div>
+          <div class="synopsis">${esc(stripHtml(m.description))}</div>
+          ${watchUrl ? `<a class="extlink" href="${watchUrl}" target="_blank" rel="noopener">↗ Open trailer on ${m.trailer.site==='youtube'?'YouTube':'Dailymotion'}</a>` : ''}
+          <div class="actionrow">
+            <button class="actionbtn dislike ${isDisliked(m.id)?'on':''}" data-action="modalDislike">✕<br>Dislike</button>
+            <button class="actionbtn wl ${wl?'on':''}" data-action="modalWatchlist">🔖<br>Watchlist</button>
+            <button class="actionbtn like ${isLiked(m.id)?'on':''}" data-action="modalLike">♥<br>Like</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+function isInWatchlist(id){
+  return state.mylist.al.some(x=>x.id===id);
+}
+
+/* ============================== ACTIONS: like/dislike/watchlist ============================== */
+async function doLike(m){
+  const i = state.local.liked.indexOf(m.id);
+  if (i>=0) state.local.liked.splice(i,1); else { state.local.liked.push(m.id); state.local.disliked = state.local.disliked.filter(x=>x!==m.id); }
+  persistPrefs();
+  if (state.anilist) { try { await alToggleFavourite(m.id); } catch(e){} }
+  render();
+}
+async function doDislike(m){
+  const i = state.local.disliked.indexOf(m.id);
+  if (i>=0) state.local.disliked.splice(i,1); else { state.local.disliked.push(m.id); state.local.liked = state.local.liked.filter(x=>x!==m.id); }
+  persistPrefs(); render();
+}
+async function doWatchlist(m){
+  const inList = isInWatchlist(m.id);
+  if (!state.anilist) { alert('Connect AniList in Settings first to save a real watchlist.'); return; }
+  try {
+    if (inList) { await alRemoveFromWatchlist(m.id); state.mylist.al = state.mylist.al.filter(x=>x.id!==m.id); }
+    else { await alAddToWatchlist(m.id); state.mylist.al.push(m); }
+    render();
+  } catch(e){ alert('Watchlist sync failed: ' + e.message); }
+}
+
+/* ============================== EVENT DELEGATION ============================== */
+function bindDynamic(){
+  // re-attach observer for browse if present
+  if (state.tab === 'browse' && state.browse.genre) setupBrowseObserver();
+}
+document.addEventListener('click', async (ev) => {
+  const t = ev.target.closest('[data-action]');
+  if (!t) return;
+  const action = t.dataset.action;
+
+  if (action === 'pickBrowseGenre') { state.browse = { genre: t.dataset.genre, items:[], page:1, hasNext:true, loading:false, error:null }; render(); fetchBrowsePage(t.dataset.genre, 1); }
+  else if (action === 'backBrowse') { browseObserver && browseObserver.disconnect(); state.browse = { genre:null, items:[], page:1, hasNext:true, loading:false, error:null }; render(); }
+  else if (action === 'openMedia') { openModal(JSON.parse(t.dataset.mediajson)); }
+  else if (action === 'closeModal') { closeModal(); }
+  else if (action === 'closeModalBg') { if (ev.target.classList.contains('modal-wrap')) closeModal(); }
+  else if (action === 'playModal') {
+    const wrap = document.getElementById('videoWrap');
+    wrap.innerHTML = `<iframe src="${trailerEmbed(state.modalMedia.trailer)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+  }
+  else if (action === 'modalLike') { await doLike(state.modalMedia); renderModal(); }
+  else if (action === 'modalDislike') { await doDislike(state.modalMedia); renderModal(); }
+  else if (action === 'modalWatchlist') { await doWatchlist(state.modalMedia); renderModal(); }
+
+  else if (action === 'pickSwipeGenre') {
+    state.swipe = { genre: t.dataset.genre, queue:[], idx:0, playing:false, loading:false, error:null, seenPages:new Set() };
+    render(); fetchSwipeMore(t.dataset.genre);
+  }
+  else if (action === 'backSwipe') { state.swipe = { genre:null, queue:[], idx:0, playing:false, loading:false, error:null, seenPages:new Set() }; render(); }
+  else if (action === 'playSwipe') { state.swipe.playing = true; render(); }
+  else if (action === 'swipeSkip') { advanceSwipe(); }
+  else if (action === 'swipeDislike') { const c = state.swipe.queue[state.swipe.idx]; if (c) await doDislike(c); advanceSwipe(); }
+  else if (action === 'swipeLike') { const c = state.swipe.queue[state.swipe.idx]; if (c) await doLike(c); advanceSwipe(); }
+  else if (action === 'swipeWatchlist') { const c = state.swipe.queue[state.swipe.idx]; if (c) { await doWatchlist(c); render(); } }
+
+  else if (action === 'myTab') { state.mylist.tab = t.dataset.key; render(); }
+
+  else if (action === 'connectAL') {
+    const cid = document.getElementById('alCidInput').value.trim();
+    if (!cid) return alert('Enter your AniList Client ID first.');
+    LS.set('al_client_id', cid);
+    location.href = alAuthUrl(cid);
+  }
+  else if (action === 'disconnectAL') { state.anilist = null; LS.set('al_auth', null); state.mylist.al = []; myListLoaded=false; render(); }
+});
+function advanceSwipe(){ state.swipe.playing = false; state.swipe.idx++; if (state.swipe.queue.length - state.swipe.idx < 5 && state.swipe.genre) fetchSwipeMore(state.swipe.genre); render(); }
+
+document.getElementById('tabs').addEventListener('click', (ev) => {
+  const b = ev.target.closest('button[data-tab]');
+  if (!b) return;
+  state.tab = b.dataset.tab;
+  if (state.tab === 'mylist') myListLoaded = false;
+  render();
+});
+
+/* ============================== INIT ============================== */
+(async function init(){
+  try {
+    const data = await alQuery(`query{ GenreCollection }`, {});
+    state.genres = data.GenreCollection;
+  } catch(e) {
+    state.genresError = 'Could not load categories from AniList: ' + e.message;
+  }
+  if (state.anilist?.token && !state.anilist.user) {
+    try { state.anilist.user = await alFetchViewer(); LS.set('al_auth', state.anilist); } catch(e){}
+  }
+  render();
+})();
+</script>
+</body>
+</html>
