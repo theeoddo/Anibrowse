@@ -13,14 +13,14 @@
     --line:#262c3a;
     --text:#eef0f4;
     --sub:#8b93a7;
-    --orange:#ff7a3d;   /* crunchyroll-ish */
-    --pink:#ff5da2;
+    --accent:#ff7a3d;   /* theme-driven primary — changed at runtime by applyTheme() */
+    --pink:#ff5da2;      /* semantic: "like" — constant across themes */
     --teal:#2fd1c5;
-    --blue:#5b9dff;
+    --blue:#5b9dff;      /* semantic: "watchlist" — constant across themes */
     --purple:#b083ff;
     --yellow:#ffd23f;
-    --green:#5fe089;
-    --red:#ff5c6c;
+    --green:#5fe089;     /* semantic: "connected" — constant across themes */
+    --red:#ff5c6c;       /* semantic: "dislike" — constant across themes */
   }
   *{box-sizing:border-box;}
   html,body{height:100%;}
@@ -34,9 +34,15 @@
     display:flex; align-items:center; justify-content:space-between;
     padding:12px 16px; border-bottom:1px solid var(--line); flex-shrink:0; gap:8px;
   }
-  .logo{ font-weight:900; font-size:19px; letter-spacing:-0.5px; }
+  .logo{ display:flex; align-items:center; gap:9px; font-weight:900; font-size:19px; letter-spacing:-0.5px; }
+  .logo-badge{
+    width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.18), rgba(0,0,0,0) 60%), var(--bg2);
+    box-shadow:0 0 14px color-mix(in srgb, var(--accent) 55%, transparent), inset 0 0 0 1px var(--line);
+  }
+  .logo-badge svg{ width:14px; height:14px; margin-left:2px; }
   .logo span.g{
-    background:linear-gradient(90deg,var(--orange),var(--pink),var(--purple),var(--blue),var(--teal));
+    background:linear-gradient(90deg,var(--accent),var(--pink),var(--purple),var(--blue),var(--teal));
     -webkit-background-clip:text; background-clip:text; color:transparent;
     background-size:200% auto; animation:hue 6s linear infinite;
   }
@@ -57,7 +63,7 @@
     background:none; border:none; color:var(--sub); display:flex; flex-direction:column;
     align-items:center; gap:3px; padding:10px 4px 8px; font-size:10px; font-weight:800; cursor:pointer;
   }
-  nav.tabs button.active{ color:var(--orange); }
+  nav.tabs button.active{ color:var(--accent); }
   nav.tabs button svg{ width:20px; height:20px; }
   .section-title{ display:flex; align-items:center; gap:8px; margin:14px 16px 10px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; color:var(--sub);}
   .chips{ display:flex; flex-wrap:wrap; gap:8px; padding:0 16px 16px; }
@@ -74,7 +80,7 @@
     background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; cursor:pointer;
     transition:transform .15s, border-color .15s; position:relative;
   }
-  .card:hover{ transform:translateY(-3px); border-color:var(--orange); }
+  .card:hover{ transform:translateY(-3px); border-color:var(--accent); }
   .card .thumb{ position:relative; width:100%; aspect-ratio:2/3; background:#222; overflow:hidden; }
   .card .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
   .badge{ position:absolute; font-size:10px; font-weight:800; padding:3px 6px; border-radius:6px; background:rgba(0,0,0,.65); }
@@ -101,7 +107,7 @@
   .video-wrap img.bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.35; }
   .video-wrap iframe{ position:relative; width:100%; height:100%; border:none; }
   .playbtn{ position:relative; display:flex; align-items:center; gap:8px; padding:10px 18px; border-radius:999px;
-    background:var(--orange); color:#0a0a0a; font-weight:800; border:none; cursor:pointer; }
+    background:var(--accent); color:#0a0a0a; font-weight:800; border:none; cursor:pointer; }
   .modal-body{ padding:18px; }
   .modal-body h2{ margin:0 0 8px; font-size:18px; }
   .genretags{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
@@ -125,20 +131,30 @@
   .field input{ width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--text); font-size:13px; }
   .field small{ display:block; color:var(--sub); margin-top:4px; font-size:11px; line-height:1.5; }
   .btn{ padding:10px 16px; border-radius:10px; border:none; font-weight:800; font-size:13px; cursor:pointer; }
-  .btn.primary{ background:var(--orange); color:#0a0a0a; }
+  .btn.primary{ background:var(--accent); color:#0a0a0a; }
   .btn.ghost{ background:var(--card); color:var(--text); border:1px solid var(--line); }
   .card-box{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:14px; }
   .divider{ height:1px; background:var(--line); margin:18px 0; }
   .empty{ text-align:center; color:var(--sub); font-size:13px; padding:40px 20px; }
   .mytabs{ display:flex; gap:8px; padding:14px 16px 4px; flex-wrap:wrap; }
   .mytab{ padding:7px 12px; border-radius:999px; font-weight:800; font-size:11.5px; border:1px solid var(--line); background:none; cursor:pointer; }
+  .mode-toggle{ display:flex; gap:8px; margin-bottom:16px; }
+  .modebtn{ flex:1; padding:9px 0; border-radius:10px; border:1px solid var(--line); background:var(--bg2); color:var(--sub); font-weight:800; font-size:12.5px; cursor:pointer; }
+  .modebtn.on{ border-color:var(--accent); color:var(--text); background:color-mix(in srgb, var(--accent) 16%, var(--bg2)); }
+  .theme-label{ font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--sub); margin:12px 0 8px; }
+  .swatches{ display:flex; flex-wrap:wrap; gap:10px; }
+  .swatch{ width:34px; height:34px; border-radius:50%; border:2px solid transparent; cursor:pointer; box-shadow:inset 0 0 0 1px rgba(0,0,0,.2); }
+  .swatch.on{ border-color:var(--text); transform:scale(1.08); }
   a{ color:inherit; }
 </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <div class="logo">Ani<span class="g">Browse</span></div>
+    <div class="logo">
+      <span class="logo-badge"><svg viewBox="0 0 24 24" fill="var(--accent)"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
+      Ani<span class="g">Browse</span>
+    </div>
     <div class="acct" id="acctBar"></div>
   </header>
   <main id="view"></main>
@@ -160,6 +176,48 @@ const REDIRECT_URI = location.origin + location.pathname;
 const PALETTE = ['#ff7a3d','#ff5da2','#2fd1c5','#5b9dff','#b083ff','#ffd23f','#5fe089','#ff5c6c','#4dd0e1','#ffb86b'];
 const colorFor = s => PALETTE[Math.abs([...s].reduce((a,c)=>a+c.charCodeAt(0),0)) % PALETTE.length];
 
+/* ============================== THEME ENGINE ============================== */
+const NEUTRAL_DARK  = { bg:'#0b0d12', bg2:'#12151c', card:'#171b24', cardHi:'#1e2330', line:'#262c3a', text:'#eef0f4', sub:'#8b93a7' };
+const NEUTRAL_LIGHT = { bg:'#f4f5f8', bg2:'#ffffff', card:'#ffffff', cardHi:'#eef0f5', line:'#dfe2e8', text:'#181b22', sub:'#5c6273' };
+
+const ACCENTS = {
+  red:'#ff5c6c', orange:'#ff7a3d', yellow:'#ffd23f', green:'#5fe089', teal:'#2fd1c5',
+  cyan:'#4dd0e1', blue:'#5b9dff', indigo:'#7c83ff', purple:'#b083ff', pink:'#ff5da2',
+};
+const PASTELS = {
+  'pastel-pink':'#ffb3c6', 'pastel-blue':'#a8d8ff', 'pastel-green':'#b8f2c9',
+  'pastel-purple':'#d4b3ff', 'pastel-yellow':'#fff3b0',
+};
+// Official Catppuccin palettes (base/mantle/surface/text/mauve), each is a fully self-contained theme.
+const CATPPUCCIN = {
+  'catppuccin-latte':     { bg:'#eff1f5', bg2:'#e6e9ef', card:'#e6e9ef', cardHi:'#ccd0da', line:'#ccd0da', text:'#4c4f69', sub:'#6c6f85', accent:'#8839ef' },
+  'catppuccin-frappe':    { bg:'#303446', bg2:'#292c3c', card:'#292c3c', cardHi:'#414559', line:'#414559', text:'#c6d0f5', sub:'#949cbb', accent:'#ca9ee6' },
+  'catppuccin-macchiato': { bg:'#24273a', bg2:'#1e2030', card:'#1e2030', cardHi:'#363a4f', line:'#363a4f', text:'#cad3f5', sub:'#939ab7', accent:'#c6a0f6' },
+  'catppuccin-mocha':     { bg:'#1e1e2e', bg2:'#181825', card:'#181825', cardHi:'#313244', line:'#313244', text:'#cdd6f4', sub:'#9399b2', accent:'#cba6f7' },
+};
+const CATPPUCCIN_LABELS = { 'catppuccin-latte':'Latte', 'catppuccin-frappe':'Frappé', 'catppuccin-macchiato':'Macchiato', 'catppuccin-mocha':'Mocha' };
+
+function themeVars(theme){
+  if (CATPPUCCIN[theme.family]) return CATPPUCCIN[theme.family];
+  const base = theme.mode === 'light' ? NEUTRAL_LIGHT : NEUTRAL_DARK;
+  const accent = ACCENTS[theme.family] || PASTELS[theme.family] || ACCENTS.orange;
+  return { ...base, accent };
+}
+function applyTheme(theme){
+  const v = themeVars(theme);
+  const root = document.documentElement.style;
+  root.setProperty('--bg', v.bg);
+  root.setProperty('--bg2', v.bg2);
+  root.setProperty('--card', v.card);
+  root.setProperty('--card-hi', v.cardHi);
+  root.setProperty('--line', v.line);
+  root.setProperty('--text', v.text);
+  root.setProperty('--sub', v.sub);
+  root.setProperty('--accent', v.accent);
+  state.theme = theme;
+  LS.set('theme', theme);
+}
+
 let state = {
   tab: 'browse',
   genres: [],
@@ -170,7 +228,9 @@ let state = {
   swipe:  { genre: null, queue: [], idx: 0, playing: false, loading: false, error: null, seenPages: new Set() },
   mylist: { tab: 'watchlist', al: [], loading: false, error: null },
   modalMedia: null,
+  theme: LS.get('theme', { family: 'orange', mode: 'dark' }),
 };
+applyTheme(state.theme);
 
 function persistPrefs(){ LS.set('local_prefs', state.local); }
 
@@ -279,18 +339,27 @@ function render(){
   const view = document.getElementById('view');
   if (state.genresError) {
     view.innerHTML = `<div class="err">${esc(state.genresError)}</div>`;
-    return;
-  }
-  if (!state.genres.length) {
+  } else if (!state.genres.length) {
     view.innerHTML = spinnerHtml();
-    return;
+  } else if (state.tab === 'browse') {
+    view.innerHTML = renderBrowse();
+  } else if (state.tab === 'swipe') {
+    view.innerHTML = renderSwipe();
+  } else if (state.tab === 'mylist') {
+    view.innerHTML = renderMyList(); loadMyList();
+  } else if (state.tab === 'settings') {
+    view.innerHTML = renderSettings();
   }
-  if (state.tab === 'browse') view.innerHTML = renderBrowse();
-  else if (state.tab === 'swipe') view.innerHTML = renderSwipe();
-  else if (state.tab === 'mylist') { view.innerHTML = renderMyList(); loadMyList(); }
-  else if (state.tab === 'settings') view.innerHTML = renderSettings();
-  if (state.modalMedia) renderModal();
+  syncModal();
   bindDynamic();
+}
+function syncModal(){
+  const host = document.getElementById('modalHost');
+  if (state.modalMedia) {
+    renderModal();
+  } else if (host) {
+    host.innerHTML = '';
+  }
 }
 function spinnerHtml(){
   return `<div style="display:flex;align-items:center;justify-content:center;height:60vh;">
@@ -302,11 +371,12 @@ function chipsHtml(title, action){
   <div class="chips">${state.genres.map(g => `<button class="chip" style="background:${colorFor(g)}" data-action="${action}" data-genre="${esc(g)}">${esc(g)}</button>`).join('')}</div>`;
 }
 function cardHtml(m){
-  const wl = state.anilist ? null : null; // watchlist badge computed from mylist cache when available
-  return `<div class="card" data-action="openMedia" data-mediajson='${esc(JSON.stringify(m)).replace(/'/g,'&#39;')}'>
+  const inWatchlist = isInWatchlist(m.id);
+  return `<div class="card" data-action="openMedia" data-mediajson='${esc(JSON.stringify(m))}'>
     <div class="thumb" style="background:${m.coverImage?.color||'#222'}">
       <img src="${m.coverImage?.large||''}" loading="lazy" alt="">
       ${m.averageScore ? `<span class="badge score">${m.averageScore}%</span>` : ''}
+      ${inWatchlist ? `<span class="badge wl">🔖</span>` : ''}
       ${isLiked(m.id) ? `<span class="badge like">♥ liked</span>` : ''}
     </div>
     <div class="title">${esc(titleOf(m))}</div>
@@ -447,11 +517,50 @@ function renderSettings(){
       </div>
 
       <div class="divider"></div>
+
+      <div class="card-box">
+        <div style="font-weight:800;margin-bottom:2px;">Theme</div>
+        <div style="font-size:11.5px;color:var(--sub);margin-bottom:12px;">Current: <b style="color:var(--text);">${themeLabel(state.theme)}</b></div>
+
+        <div class="mode-toggle">
+          <button class="modebtn ${!isCatppuccin() && state.theme.mode==='dark' ? 'on':''}" data-action="setMode" data-mode="dark">🌙 Dark</button>
+          <button class="modebtn ${!isCatppuccin() && state.theme.mode==='light' ? 'on':''}" data-action="setMode" data-mode="light">☀️ Light</button>
+        </div>
+
+        <div class="theme-label">Colors</div>
+        <div class="swatches">
+          ${Object.entries(ACCENTS).map(([key,hex]) => `
+            <button class="swatch ${!isCatppuccin() && state.theme.family===key?'on':''}" data-action="setFamily" data-family="${key}" style="background:${hex}" title="${key}"></button>
+          `).join('')}
+        </div>
+
+        <div class="theme-label">Pastels</div>
+        <div class="swatches">
+          ${Object.entries(PASTELS).map(([key,hex]) => `
+            <button class="swatch ${!isCatppuccin() && state.theme.family===key?'on':''}" data-action="setFamily" data-family="${key}" style="background:${hex}" title="${key}"></button>
+          `).join('')}
+        </div>
+
+        <div class="theme-label">Catppuccin</div>
+        <div class="swatches">
+          ${Object.entries(CATPPUCCIN).map(([key,v]) => `
+            <button class="swatch ${state.theme.family===key?'on':''}" data-action="setCatppuccin" data-family="${key}" style="background:${v.accent}" title="${CATPPUCCIN_LABELS[key]}"></button>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="divider"></div>
       <div style="font-size:11.5px;color:var(--sub);line-height:1.6;">
         Likes/dislikes are stored only in this browser (AniList has no public "dislike" concept). Liking an anime while AniList is connected also favourites it there. Watchlist adds/removes sync live to your real AniList "Plan to Watch" list.
       </div>
     </div>
   `;
+}
+function isCatppuccin(){ return !!CATPPUCCIN[state.theme.family]; }
+function themeLabel(theme){
+  if (CATPPUCCIN[theme.family]) return 'Catppuccin ' + CATPPUCCIN_LABELS[theme.family];
+  const name = theme.family.replace('pastel-', 'Pastel ').replace(/^[a-z]/, c => c.toUpperCase());
+  return `${name} (${theme.mode === 'light' ? 'Light' : 'Dark'})`;
 }
 
 /* ============================== MODAL ============================== */
@@ -562,6 +671,10 @@ document.addEventListener('click', async (ev) => {
     location.href = alAuthUrl(cid);
   }
   else if (action === 'disconnectAL') { state.anilist = null; LS.set('al_auth', null); state.mylist.al = []; myListLoaded=false; render(); }
+
+  else if (action === 'setMode') { applyTheme({ family: (CATPPUCCIN[state.theme.family] ? 'orange' : state.theme.family), mode: t.dataset.mode }); render(); }
+  else if (action === 'setFamily') { applyTheme({ family: t.dataset.family, mode: state.theme.mode === 'light' ? 'light' : 'dark' }); render(); }
+  else if (action === 'setCatppuccin') { applyTheme({ family: t.dataset.family, mode: t.dataset.family === 'catppuccin-latte' ? 'light' : 'dark' }); render(); }
 });
 function advanceSwipe(){ state.swipe.playing = false; state.swipe.idx++; if (state.swipe.queue.length - state.swipe.idx < 5 && state.swipe.genre) fetchSwipeMore(state.swipe.genre); render(); }
 
