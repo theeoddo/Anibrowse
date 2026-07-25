@@ -121,10 +121,11 @@
   .actionbtn.dislike.on{ border-color:var(--red); color:var(--red); background:rgba(255,92,108,.12); }
   .actionbtn.wl.on{ border-color:var(--blue); color:var(--blue); background:rgba(91,157,255,.12); }
   .actionbtn.like.on{ border-color:var(--pink); color:var(--pink); background:rgba(255,93,162,.12); }
-  .swipe-stage{ position:relative; flex:1; min-height:0; background:#000; display:flex; align-items:center; justify-content:center; }
-  .swipe-stage img.bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.28; filter:blur(2px); }
-  .swipe-title{ position:absolute; top:10px; left:10px; right:56px; background:rgba(0,0,0,.6); padding:6px 10px; border-radius:8px; font-weight:800; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .swipe-actions{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:12px 14px; border-top:1px solid var(--line); flex-shrink:0; }
+  .swipe-stage{ position:relative; flex:1; min-height:0; background:#000; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .swipe-stage img.bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.28; filter:blur(2px); z-index:0; }
+  .swipe-stage iframe{ position:absolute; inset:0; width:100%; height:100%; border:none; z-index:1; opacity:1; background:#000; }
+  .swipe-title{ position:absolute; top:10px; left:10px; right:56px; background:rgba(0,0,0,.6); padding:6px 10px; border-radius:8px; font-weight:800; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; z-index:2; pointer-events:none; }
+  .swipe-actions{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:12px 14px; border-top:1px solid var(--line); flex-shrink:0; }
   .settings{ padding:16px; }
   .field{ margin-bottom:14px; }
   .field label{ display:block; font-size:11.5px; font-weight:800; color:var(--sub); margin-bottom:5px; }
@@ -145,6 +146,63 @@
   .swatches{ display:flex; flex-wrap:wrap; gap:10px; }
   .swatch{ width:34px; height:34px; border-radius:50%; border:2px solid transparent; cursor:pointer; box-shadow:inset 0 0 0 1px rgba(0,0,0,.2); }
   .swatch.on{ border-color:var(--text); transform:scale(1.08); }
+
+  /* search */
+  .searchbar{ display:flex; align-items:center; gap:8px; margin:12px 16px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:9px 12px; }
+  .searchbar svg{ width:16px; height:16px; color:var(--sub); flex-shrink:0; }
+  .searchbar input{ flex:1; background:none; border:none; outline:none; color:var(--text); font-size:14px; }
+  .searchbar input::placeholder{ color:var(--sub); }
+  .searchbar .clearbtn{ background:none; border:none; color:var(--sub); cursor:pointer; font-size:14px; padding:2px 4px; }
+
+  /* modal back / stack */
+  .modal .backbtn2{ position:absolute; top:10px; left:10px; z-index:2; background:rgba(0,0,0,.6); border:none;
+    color:#fff; width:30px; height:30px; border-radius:50%; cursor:pointer; }
+
+  /* list status editor */
+  .list-block{ border-top:1px solid var(--line); padding-top:14px; margin-top:14px; }
+  .list-heading{ font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--sub); margin-bottom:9px; }
+  .status-row{ display:flex; flex-wrap:wrap; gap:7px; margin-bottom:12px; }
+  .status-chip{ padding:7px 12px; border-radius:999px; font-size:11.5px; font-weight:800; border:1px solid var(--line); background:var(--bg2); color:var(--sub); cursor:pointer; }
+  .status-chip.on{ color:#0a0a0a; border-color:transparent; }
+  .progress-row{ display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .stepper{ display:flex; align-items:center; gap:10px; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:4px 6px; }
+  .stepper button{ width:26px; height:26px; border-radius:8px; border:none; background:var(--card-hi); color:var(--text); font-weight:900; cursor:pointer; }
+  .stepper .val{ min-width:44px; text-align:center; font-weight:800; font-size:13px; }
+  .score-row{ display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
+  .score-row input[type=number]{ width:70px; padding:7px 9px; border-radius:8px; border:1px solid var(--line); background:var(--bg2); color:var(--text); font-size:13px; }
+  .score-stars{ display:flex; gap:4px; }
+  .score-stars button, .score-smiley button{ background:none; border:none; font-size:20px; cursor:pointer; opacity:.35; }
+  .score-stars button.on, .score-smiley button.on{ opacity:1; }
+  .removebtn{ font-size:11.5px; color:var(--red); background:none; border:none; cursor:pointer; font-weight:700; padding:0; }
+
+  /* cast / staff */
+  .people-scroll{ display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; }
+  .person-card{ flex-shrink:0; width:84px; text-align:center; cursor:pointer; }
+  .person-card img{ width:84px; height:84px; object-fit:cover; border-radius:12px; background:var(--card-hi); margin-bottom:5px; }
+  .person-card .pname{ font-size:10.5px; font-weight:700; line-height:1.25; }
+  .person-card .prole{ font-size:9.5px; color:var(--sub); margin-top:1px; }
+
+  /* studios */
+  .studio-chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .studio-chip{ padding:6px 12px; border-radius:999px; font-size:11.5px; font-weight:700; background:var(--bg2); border:1px solid var(--line); color:var(--text); cursor:pointer; }
+
+  /* reviews */
+  .review-item{ background:var(--bg2); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
+  .review-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; }
+  .review-user{ display:flex; align-items:center; gap:7px; font-size:12px; font-weight:700; }
+  .review-user img{ width:20px; height:20px; border-radius:50%; object-fit:cover; }
+  .review-score{ font-size:11.5px; font-weight:800; color:var(--green); }
+  .review-summary{ font-size:12.5px; color:var(--sub); line-height:1.5; }
+  .review-form input[type=text]{ width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--line); background:var(--bg2); color:var(--text); font-size:13px; margin-bottom:8px; }
+  .review-form textarea{ width:100%; min-height:120px; padding:10px 11px; border-radius:8px; border:1px solid var(--line); background:var(--bg2); color:var(--text); font-size:13px; font-family:inherit; resize:vertical; margin-bottom:6px; }
+  .review-form .charcount{ font-size:11px; color:var(--sub); margin-bottom:8px; }
+  .review-form .charcount.bad{ color:var(--red); }
+
+  /* studio / person hero pages */
+  .hero{ padding:20px 16px 10px; display:flex; gap:14px; align-items:center; }
+  .hero img{ width:84px; height:84px; border-radius:16px; object-fit:cover; background:var(--card-hi); }
+  .hero h2{ margin:0 0 4px; font-size:17px; }
+  .hero .sub{ font-size:12px; color:var(--sub); font-weight:700; }
   a{ color:inherit; }
 </style>
 </head>
@@ -222,15 +280,16 @@ let state = {
   tab: 'browse',
   genres: [],
   genresError: null,
-  anilist: LS.get('al_auth', null),   // {token, user:{id,name,avatar}}
-  local: LS.get('local_prefs', { liked: [], disliked: [] }), // local-only likes/dislikes, keyed by anilist id
-  browse: { genre: null, items: [], page: 1, hasNext: true, loading: false, error: null },
+  anilist: LS.get('al_auth', null),   // {token, user:{id,name,avatar}, scoreFormat}
+  local: LS.get('local_prefs', { liked: [] }), // local-only likes, keyed by anilist id
+  browse: { mode: 'pick', genre: null, search: '', items: [], page: 1, hasNext: true, loading: false, error: null },
   swipe:  { genre: null, queue: [], idx: 0, playing: false, loading: false, error: null, seenPages: new Set() },
-  mylist: { tab: 'watchlist', al: [], loading: false, error: null },
-  modalMedia: null,
+  mylist: { tab: 'CURRENT', byStatus: { CURRENT:[], PLANNING:[], COMPLETED:[], PAUSED:[], DROPPED:[], REPEATING:[] }, loading: false, error: null },
+  modalStack: [], // [{type:'anime'|'studio'|'person', data, detail, entry, loading}]
   theme: LS.get('theme', { family: 'orange', mode: 'dark' }),
 };
 applyTheme(state.theme);
+function curModal(){ return state.modalStack[state.modalStack.length-1] || null; }
 
 function persistPrefs(){ LS.set('local_prefs', state.local); }
 
@@ -257,34 +316,98 @@ const MEDIA_QUERY = `query($page:Int,$perPage:Int,$genre:String){
     media(genre:$genre, sort:POPULARITY_DESC, type:ANIME, isAdult:false){ ${MEDIA_FIELDS} }
   }
 }`;
+const MEDIA_SEARCH_QUERY = `query($page:Int,$perPage:Int,$search:String){
+  Page(page:$page, perPage:$perPage){
+    pageInfo{ hasNextPage }
+    media(search:$search, sort:SEARCH_MATCH, type:ANIME, isAdult:false){ ${MEDIA_FIELDS} }
+  }
+}`;
+const MEDIA_DETAIL_QUERY = `query($id:Int){
+  Media(id:$id){
+    ${MEDIA_FIELDS}
+    siteUrl
+    studios{ edges{ isMain node{ id name } } }
+    characters(sort:[ROLE,RELEVANCE], perPage:10){
+      edges{
+        role
+        node{ id name{ full } image{ medium } }
+        voiceActors(language:JAPANESE){ id name{ full } image{ medium } }
+      }
+    }
+    staff(sort:[RELEVANCE], perPage:8){
+      edges{ role node{ id name{ full } image{ medium } } }
+    }
+    reviews(sort:RATING_DESC, perPage:5){
+      nodes{ id summary rating ratingAmount score user{ id name avatar{ medium } } }
+    }
+  }
+}`;
+const STUDIO_QUERY = `query($id:Int){
+  Studio(id:$id){
+    id name isAnimationStudio
+    media(sort:POPULARITY_DESC, perPage:24){ nodes{ ${MEDIA_FIELDS} } }
+  }
+}`;
+const STAFF_QUERY = `query($id:Int){
+  Staff(id:$id){
+    id name{ full } image{ large } primaryOccupations
+    staffMedia(sort:POPULARITY_DESC, perPage:12){ edges{ node{ ${MEDIA_FIELDS} } } }
+  }
+}`;
 function alAuthUrl(clientId){
   return `https://anilist.co/api/v2/oauth/authorize?client_id=${encodeURIComponent(clientId)}&response_type=token`;
 }
 async function alFetchViewer(){
-  const data = await alQuery(`query{ Viewer{ id name avatar{ medium } } }`, {}, true);
+  const data = await alQuery(`query{ Viewer{ id name avatar{ medium } mediaListOptions{ scoreFormat } } }`, {}, true);
   return data.Viewer;
 }
-async function alAddToWatchlist(mediaId){
-  await alQuery(`mutation($id:Int){ SaveMediaListEntry(mediaId:$id, status:PLANNING){ id status } }`, { id: mediaId }, true);
+async function alFetchEntry(mediaId){
+  if (!state.anilist?.user) return null;
+  const data = await alQuery(`query($id:Int,$uid:Int){ MediaList(mediaId:$id, userId:$uid){ id status progress score } }`, { id: mediaId, uid: state.anilist.user.id }, true);
+  return data.MediaList || null;
 }
-async function alRemoveFromWatchlist(mediaId){
-  const data = await alQuery(`query($id:Int,$uid:Int){ MediaList(mediaId:$id, userId:$uid){ id } }`, { id: mediaId, uid: state.anilist.user.id }, true);
-  if (data.MediaList?.id) {
-    await alQuery(`mutation($id:Int){ DeleteMediaListEntry(id:$id){ deleted } }`, { id: data.MediaList.id }, true);
-  }
+async function alSaveEntry(mediaId, { status, progress, score }){
+  const data = await alQuery(`mutation($mediaId:Int,$status:MediaListStatus,$progress:Int,$score:Float){
+    SaveMediaListEntry(mediaId:$mediaId, status:$status, progress:$progress, score:$score){ id status progress score }
+  }`, { mediaId, status, progress, score }, true);
+  return data.SaveMediaListEntry;
+}
+async function alDeleteEntry(entryId){
+  await alQuery(`mutation($id:Int){ DeleteMediaListEntry(id:$id){ deleted } }`, { id: entryId }, true);
+}
+async function alSaveReview(mediaId, { summary, body, score }){
+  const data = await alQuery(`mutation($mediaId:Int,$summary:String,$body:String,$score:Int){
+    SaveReview(mediaId:$mediaId, summary:$summary, body:$body, score:$score){ id summary score siteUrl }
+  }`, { mediaId, summary, body, score }, true);
+  return data.SaveReview;
 }
 async function alToggleFavourite(mediaId){
   await alQuery(`mutation($id:Int){ ToggleFavourite(animeId:$id){ anime{ nodes{ id } } } }`, { id: mediaId }, true);
 }
-async function alFetchPlanning(userId){
+async function alFetchAllLists(userId){
   const data = await alQuery(`query($uid:Int){
-    MediaListCollection(userId:$uid, type:ANIME, status:PLANNING){
-      lists{ entries{ media{ ${MEDIA_FIELDS} } } }
+    MediaListCollection(userId:$uid, type:ANIME){
+      lists{ status entries{ status progress score media{ ${MEDIA_FIELDS} } } }
     }
   }`, { uid: userId }, true);
-  const out = [];
-  (data.MediaListCollection?.lists || []).forEach(l => l.entries.forEach(e => out.push(e.media)));
+  const out = { CURRENT:[], PLANNING:[], COMPLETED:[], PAUSED:[], DROPPED:[], REPEATING:[] };
+  (data.MediaListCollection?.lists || []).forEach(l => l.entries.forEach(e => {
+    if (!out[e.status]) out[e.status] = [];
+    out[e.status].push({ ...e.media, _entry: { status: e.status, progress: e.progress, score: e.score } });
+  }));
   return out;
+}
+async function alFetchDetail(id){
+  const data = await alQuery(MEDIA_DETAIL_QUERY, { id });
+  return data.Media;
+}
+async function alFetchStudio(id){
+  const data = await alQuery(STUDIO_QUERY, { id });
+  return data.Studio;
+}
+async function alFetchStaff(id){
+  const data = await alQuery(STAFF_QUERY, { id });
+  return data.Staff;
 }
 
 /* ============================== HANDLE OAUTH REDIRECTS ============================== */
@@ -296,7 +419,7 @@ async function alFetchPlanning(userId){
       state.anilist = { token, user:null };
       LS.set('al_auth', state.anilist);
       history.replaceState(null, '', location.pathname + location.search);
-      alFetchViewer().then(u => { state.anilist.user = u; LS.set('al_auth', state.anilist); renderAcctBar(); }).catch(()=>{});
+      alFetchViewer().then(u => { state.anilist.user = u; state.anilist.scoreFormat = u.mediaListOptions?.scoreFormat || 'POINT_10'; LS.set('al_auth', state.anilist); renderAcctBar(); }).catch(()=>{});
     }
   }
 })();
@@ -320,7 +443,6 @@ function stripHtml(html){
   return html.replace(/<br\s*\/?>/gi,'\n').replace(/<\/?(i|b|em|strong)>/gi,'').replace(/<[^>]*>/g,'').trim();
 }
 function isLiked(id){ return state.local.liked.includes(id); }
-function isDisliked(id){ return state.local.disliked.includes(id); }
 function esc(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 /* ============================== RENDER: ACCOUNT BAR ============================== */
@@ -355,7 +477,7 @@ function render(){
 }
 function syncModal(){
   const host = document.getElementById('modalHost');
-  if (state.modalMedia) {
+  if (curModal()) {
     renderModal();
   } else if (host) {
     host.innerHTML = '';
@@ -370,39 +492,58 @@ function chipsHtml(title, action){
   return `<div class="section-title">${title}</div>
   <div class="chips">${state.genres.map(g => `<button class="chip" style="background:${colorFor(g)}" data-action="${action}" data-genre="${esc(g)}">${esc(g)}</button>`).join('')}</div>`;
 }
+const STATUS_LABELS = { CURRENT:'Watching', PLANNING:'Planning', COMPLETED:'Completed', PAUSED:'Paused', DROPPED:'Dropped', REPEATING:'Repeating' };
+const STATUS_COLORS = { CURRENT:'#5fe089', PLANNING:'#5b9dff', COMPLETED:'#b083ff', PAUSED:'#ffd23f', DROPPED:'#ff5c6c', REPEATING:'#2fd1c5' };
+function statusOf(id){
+  for (const k in state.mylist.byStatus) { if (state.mylist.byStatus[k].some(x=>x.id===id)) return k; }
+  return null;
+}
 function cardHtml(m){
-  const inWatchlist = isInWatchlist(m.id);
+  const st = statusOf(m.id);
   return `<div class="card" data-action="openMedia" data-mediajson='${esc(JSON.stringify(m))}'>
     <div class="thumb" style="background:${m.coverImage?.color||'#222'}">
       <img src="${m.coverImage?.large||''}" loading="lazy" alt="">
       ${m.averageScore ? `<span class="badge score">${m.averageScore}%</span>` : ''}
-      ${inWatchlist ? `<span class="badge wl">🔖</span>` : ''}
-      ${isLiked(m.id) ? `<span class="badge like">♥ liked</span>` : ''}
+      ${st ? `<span class="badge wl" style="color:${STATUS_COLORS[st]}">${STATUS_LABELS[st]}</span>` : ''}
+      ${isLiked(m.id) ? `<span class="badge like">♥</span>` : ''}
     </div>
     <div class="title">${esc(titleOf(m))}</div>
   </div>`;
 }
 
 /* ============================== BROWSE ============================== */
+function searchBarHtml(value, placeholder){
+  return `<div class="searchbar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <input type="text" data-role="browseSearch" placeholder="${esc(placeholder)}" value="${esc(value)}">
+    ${value ? `<button class="clearbtn" data-action="clearSearch">✕</button>` : ''}
+  </div>`;
+}
 function renderBrowse(){
   const b = state.browse;
-  if (!b.genre) return chipsHtml('Choose a category', 'pickBrowseGenre');
+  const bar = searchBarHtml(b.search, 'Search anime titles…');
+  if (b.mode === 'pick') return bar + chipsHtml('Or choose a category', 'pickBrowseGenre');
+  const label = b.mode === 'search' ? `Results for "${esc(b.search)}"` : b.genre;
+  const chipColor = b.mode === 'search' ? '#5b9dff' : colorFor(b.genre);
   return `
-    <div class="backbar">
+    ${bar}
+    <div class="backbar" style="padding-top:0;">
       <button class="iconbtn" data-action="backBrowse">←</button>
-      <span class="chip" style="background:${colorFor(b.genre)}">${esc(b.genre)}</span>
+      <span class="chip" style="background:${chipColor}">${label}</span>
     </div>
     ${b.error ? `<div class="err">${esc(b.error)}</div>` : ''}
     <div class="grid" id="browseGrid">${b.items.map(cardHtml).join('')}</div>
-    <div class="sentinel" id="browseSentinel">${b.loading ? spinnerHtml() : (!b.hasNext && b.items.length ? '— end of the list —' : '')}</div>
+    <div class="sentinel" id="browseSentinel">${b.loading ? spinnerHtml() : (!b.hasNext && b.items.length ? '— end of the list —' : (!b.items.length && !b.loading ? '<div class="empty">No results.</div>' : ''))}</div>
   `;
 }
-async function fetchBrowsePage(genre, page){
+async function fetchBrowsePage(page){
   const b = state.browse;
   if (b.loading) return;
   b.loading = true; b.error = null; render();
   try {
-    const data = await alQuery(MEDIA_QUERY, { page, perPage: 24, genre });
+    let data;
+    if (b.mode === 'search') data = await alQuery(MEDIA_SEARCH_QUERY, { page, perPage: 24, search: b.search });
+    else data = await alQuery(MEDIA_QUERY, { page, perPage: 24, genre: b.genre });
     b.items = page === 1 ? data.Page.media : [...b.items, ...data.Page.media];
     b.hasNext = data.Page.pageInfo.hasNextPage;
     b.page = page;
@@ -416,9 +557,22 @@ function setupBrowseObserver(){
   if (!el) return;
   browseObserver = new IntersectionObserver(entries => {
     const b = state.browse;
-    if (entries[0].isIntersecting && b.hasNext && !b.loading) fetchBrowsePage(b.genre, b.page + 1);
+    if (entries[0].isIntersecting && b.hasNext && !b.loading) fetchBrowsePage(b.page + 1);
   }, { rootMargin:'500px' });
   browseObserver.observe(el);
+}
+let searchDebounce = null;
+function onBrowseSearchInput(value){
+  state.browse.search = value;
+  clearTimeout(searchDebounce);
+  if (!value.trim()) {
+    state.browse.mode = 'pick'; state.browse.items = []; render();
+    return;
+  }
+  searchDebounce = setTimeout(() => {
+    state.browse.mode = 'search'; state.browse.page = 1; state.browse.hasNext = true;
+    fetchBrowsePage(1);
+  }, 450);
 }
 
 /* ============================== SWIPE ============================== */
@@ -448,8 +602,7 @@ function renderSwipe(){
       ${s.error ? `<div class="err">${esc(s.error)}</div>` : ''}
       <div class="swipe-actions">
         <button class="actionbtn" data-action="swipeSkip">⏭<br>Skip</button>
-        <button class="actionbtn dislike" data-action="swipeDislike">✕<br>Dislike</button>
-        <button class="actionbtn wl" data-action="swipeWatchlist">🔖<br>Watchlist</button>
+        <button class="actionbtn wl" data-action="swipePlan">🔖<br>Plan to Watch</button>
         <button class="actionbtn like" data-action="swipeLike">♥<br>Like</button>
       </div>
     </div>
@@ -471,20 +624,23 @@ async function fetchSwipeMore(genre){
 }
 
 /* ============================== MY LIST ============================== */
+const MYLIST_TABS = [['CURRENT','Watching'],['PLANNING','Planning'],['COMPLETED','Completed'],['PAUSED','Paused'],['DROPPED','Dropped'],['REPEATING','Repeating'],['LIKED','Liked']];
 function renderMyList(){
   const m = state.mylist;
-  const tabs = [['watchlist','Watchlist'],['liked','Liked'],['disliked','Disliked']];
   let list = [];
-  if (m.tab === 'watchlist') list = m.al;
-  else if (m.tab === 'liked') list = state.local.liked.map(id => m.al.find(x=>x.id===id)).filter(Boolean);
-  else list = state.local.disliked.map(id => m.al.find(x=>x.id===id)).filter(Boolean);
+  if (m.tab === 'LIKED') list = state.local.liked.map(id => findAnywhere(id)).filter(Boolean);
+  else list = m.byStatus[m.tab] || [];
 
   return `
-    <div class="mytabs">${tabs.map(([k,l]) => `<button class="mytab" data-action="myTab" data-key="${k}" style="${m.tab===k?`background:${colorFor(l)};color:#0a0a0a;border-color:transparent;`:''}">${l}</button>`).join('')}</div>
-    ${!state.anilist ? `<div class="err" style="margin:14px 16px;">Connect AniList in Settings to sync your real watchlist. Likes/dislikes work locally either way.</div>` : ''}
+    <div class="mytabs">${MYLIST_TABS.map(([k,l]) => `<button class="mytab" data-action="myTab" data-key="${k}" style="${m.tab===k?`background:${STATUS_COLORS[k]||'#ff5da2'};color:#0a0a0a;border-color:transparent;`:''}">${l}</button>`).join('')}</div>
+    ${!state.anilist ? `<div class="err" style="margin:14px 16px;">Connect AniList in Settings to sync your real lists. Liked works locally either way.</div>` : ''}
     ${m.error ? `<div class="err">${esc(m.error)}</div>` : ''}
     ${m.loading ? spinnerHtml() : (list.length ? `<div class="grid">${list.map(cardHtml).join('')}</div>` : `<div class="empty">Nothing here yet.</div>`)}
   `;
+}
+function findAnywhere(id){
+  for (const k in state.mylist.byStatus) { const f = state.mylist.byStatus[k].find(x=>x.id===id); if (f) return f; }
+  return null;
 }
 let myListLoaded = false;
 async function loadMyList(force){
@@ -493,8 +649,8 @@ async function loadMyList(force){
   const m = state.mylist;
   m.loading = true; m.error = null;
   try {
-    if (state.anilist?.user) m.al = await alFetchPlanning(state.anilist.user.id);
-  } catch(e){ m.error = 'Could not load your list: ' + e.message; }
+    if (state.anilist?.user) m.byStatus = await alFetchAllLists(state.anilist.user.id);
+  } catch(e){ m.error = 'Could not load your lists: ' + e.message; }
   m.loading = false; render();
 }
 
@@ -551,7 +707,7 @@ function renderSettings(){
 
       <div class="divider"></div>
       <div style="font-size:11.5px;color:var(--sub);line-height:1.6;">
-        Likes/dislikes are stored only in this browser (AniList has no public "dislike" concept). Liking an anime while AniList is connected also favourites it there. Watchlist adds/removes sync live to your real AniList "Plan to Watch" list.
+        "Liked" is stored only in this browser (AniList has no public "like" concept of its own — liking here also favourites the anime on AniList if connected). Status, episode progress, and score changes save straight to your real AniList list. Cast/staff show the credited Japanese voice actors where AniList has them.
       </div>
     </div>
   `;
@@ -563,93 +719,339 @@ function themeLabel(theme){
   return `${name} (${theme.mode === 'light' ? 'Light' : 'Dark'})`;
 }
 
-/* ============================== MODAL ============================== */
-function openModal(m){ state.modalMedia = m; render(); }
-function closeModal(){ state.modalMedia = null; render(); }
+/* ============================== MODAL (anime / studio / person, stacked) ============================== */
+function openAnimeModal(m){
+  state.modalStack.push({ type:'anime', data: m, detail:null, entry:null, loading:true });
+  render();
+  loadAnimeModalExtras(m.id);
+}
+function openStudioModal(id, name){
+  state.modalStack.push({ type:'studio', data:{ id, name }, detail:null, loading:true });
+  render();
+  alFetchStudio(id).then(s => { const c = curModal(); if (c) { c.detail = s; c.loading = false; render(); } }).catch(e => { const c = curModal(); if (c) { c.loading=false; c.error = e.message; render(); } });
+}
+function openPersonModal(id, name){
+  state.modalStack.push({ type:'person', data:{ id, name }, detail:null, loading:true });
+  render();
+  alFetchStaff(id).then(s => { const c = curModal(); if (c) { c.detail = s; c.loading = false; render(); } }).catch(e => { const c = curModal(); if (c) { c.loading=false; c.error = e.message; render(); } });
+}
+async function loadAnimeModalExtras(id){
+  const c = state.modalStack.find(x => x.type==='anime' && x.data.id===id);
+  try {
+    const [detail, entry] = await Promise.all([ alFetchDetail(id), alFetchEntry(id) ]);
+    if (c) { c.detail = detail; c.entry = entry; c.loading = false; render(); }
+  } catch(e){ if (c) { c.loading = false; c.error = e.message; render(); } }
+}
+function popModal(){ state.modalStack.pop(); render(); }
+function closeAllModals(){ state.modalStack = []; render(); }
+
 function renderModal(){
   let host = document.getElementById('modalHost');
   if (!host) { host = document.createElement('div'); host.id = 'modalHost'; document.body.appendChild(host); }
-  const m = state.modalMedia;
-  const wl = isInWatchlist(m.id);
-  const embed = trailerEmbed(m.trailer);
-  const watchUrl = trailerWatch(m.trailer);
+  const c = curModal();
+  const backBtn = state.modalStack.length > 1 ? `<button class="backbtn2" data-action="modalBack">←</button>` : '';
+  let inner;
+  if (c.type === 'anime') inner = renderAnimeModal(c);
+  else if (c.type === 'studio') inner = renderStudioModal(c);
+  else inner = renderPersonModal(c);
   host.innerHTML = `
     <div class="modal-wrap" data-action="closeModalBg">
       <div class="modal" onclick="event.stopPropagation()">
+        ${backBtn}
         <button class="close" data-action="closeModal">✕</button>
-        <div class="video-wrap" id="videoWrap">
-          <img class="bg" src="${m.coverImage?.large||''}">
-          ${embed ? `<button class="playbtn" data-action="playModal" style="position:relative;">▶ Play trailer</button>` : `<span style="position:relative;color:#8b93a7;background:rgba(0,0,0,.6);padding:8px 12px;border-radius:8px;font-size:12px;">No trailer available</span>`}
-        </div>
-        <div class="modal-body">
-          <h2>${esc(titleOf(m))}</h2>
-          <div class="genretags">${(m.genres||[]).map(g=>`<span class="genretag" style="background:${colorFor(g)}">${esc(g)}</span>`).join('')}</div>
-          <div class="meta">
-            ${m.averageScore ? `<span>★ ${m.averageScore}%</span>` : ''}
-            ${m.episodes ? `<span>${m.episodes} eps</span>` : ''}
-            ${m.seasonYear ? `<span>${m.season?m.season+' ':''}${m.seasonYear}</span>` : ''}
-          </div>
-          <div class="synopsis">${esc(stripHtml(m.description))}</div>
-          ${watchUrl ? `<a class="extlink" href="${watchUrl}" target="_blank" rel="noopener">↗ Open trailer on ${m.trailer.site==='youtube'?'YouTube':'Dailymotion'}</a>` : ''}
-          <div class="actionrow">
-            <button class="actionbtn dislike ${isDisliked(m.id)?'on':''}" data-action="modalDislike">✕<br>Dislike</button>
-            <button class="actionbtn wl ${wl?'on':''}" data-action="modalWatchlist">🔖<br>Watchlist</button>
-            <button class="actionbtn like ${isLiked(m.id)?'on':''}" data-action="modalLike">♥<br>Like</button>
-          </div>
-        </div>
+        ${inner}
       </div>
     </div>
   `;
 }
-function isInWatchlist(id){
-  return state.mylist.al.some(x=>x.id===id);
+
+function renderAnimeModal(c){
+  const m = { ...c.data, ...(c.detail || {}) };
+  const embed = trailerEmbed(m.trailer);
+  const watchUrl = trailerWatch(m.trailer);
+  const studios = m.studios ? (m.studios.edges.filter(e=>e.isMain).length ? m.studios.edges.filter(e=>e.isMain) : m.studios.edges) : [];
+
+  return `
+    <div class="video-wrap" id="videoWrap">
+      <img class="bg" src="${m.coverImage?.large||''}">
+      ${embed ? `<button class="playbtn" data-action="playModal" style="position:relative;">▶ Play trailer</button>` : `<span style="position:relative;color:#8b93a7;background:rgba(0,0,0,.6);padding:8px 12px;border-radius:8px;font-size:12px;">No trailer available</span>`}
+    </div>
+    <div class="modal-body">
+      <h2>${esc(titleOf(m))}</h2>
+      <div class="genretags">${(m.genres||[]).map(g=>`<span class="genretag" style="background:${colorFor(g)}">${esc(g)}</span>`).join('')}</div>
+      <div class="meta">
+        ${m.averageScore ? `<span>★ ${m.averageScore}%</span>` : ''}
+        ${m.episodes ? `<span>${m.episodes} eps</span>` : ''}
+        ${m.seasonYear ? `<span>${m.season?m.season+' ':''}${m.seasonYear}</span>` : ''}
+      </div>
+      <div class="synopsis">${esc(stripHtml(m.description))}</div>
+      ${watchUrl ? `<a class="extlink" href="${watchUrl}" target="_blank" rel="noopener">↗ Open trailer on ${m.trailer.site==='youtube'?'YouTube':'Dailymotion'}</a>` : ''}
+
+      <div class="actionrow">
+        <button class="actionbtn like ${isLiked(m.id)?'on':''}" data-action="modalLike" style="grid-column:span 3;">♥ ${isLiked(m.id) ? 'Liked' : 'Like'}</button>
+      </div>
+
+      <div class="list-block">
+        <div class="list-heading">Your list</div>
+        ${!state.anilist ? `<div style="font-size:12px;color:var(--sub);margin-bottom:10px;">Connect AniList in Settings to track status, episodes and score.</div>` : `
+          <div class="status-row">
+            ${Object.entries(STATUS_LABELS).map(([k,l]) => `
+              <button class="status-chip ${c.entry?.status===k?'on':''}" style="${c.entry?.status===k?`background:${STATUS_COLORS[k]}`:''}" data-action="setStatus" data-status="${k}">${l}</button>
+            `).join('')}
+          </div>
+          ${c.entry ? `
+            <div class="progress-row">
+              <span style="font-size:12px;color:var(--sub);font-weight:700;">Episode</span>
+              <div class="stepper">
+                <button data-action="progDown">−</button>
+                <span class="val">${c.entry.progress||0}${m.episodes?` / ${m.episodes}`:''}</span>
+                <button data-action="progUp">+</button>
+              </div>
+            </div>
+            ${scoreRowHtml(c.entry)}
+            <button class="removebtn" data-action="removeEntry">Remove from list</button>
+          ` : `<div style="font-size:12px;color:var(--sub);">Pick a status above to add this to your list.</div>`}
+        `}
+      </div>
+
+      ${m.characters?.edges?.length ? `
+        <div class="list-block">
+          <div class="list-heading">Cast (Japanese)</div>
+          <div class="people-scroll">
+            ${m.characters.edges.map(e => {
+              const va = e.voiceActors?.[0];
+              return va ? `<div class="person-card" data-action="openPerson" data-id="${va.id}" data-name="${esc(va.name.full)}">
+                <img src="${va.image?.medium||''}" alt="">
+                <div class="pname">${esc(va.name.full)}</div>
+                <div class="prole">${esc(e.node.name.full)}</div>
+              </div>` : '';
+            }).join('')}
+          </div>
+        </div>
+      ` : ''}
+
+      ${m.staff?.edges?.length ? `
+        <div class="list-block">
+          <div class="list-heading">Staff</div>
+          <div class="people-scroll">
+            ${m.staff.edges.map(e => `
+              <div class="person-card" data-action="openPerson" data-id="${e.node.id}" data-name="${esc(e.node.name.full)}">
+                <img src="${e.node.image?.medium||''}" alt="">
+                <div class="pname">${esc(e.node.name.full)}</div>
+                <div class="prole">${esc(e.role||'')}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
+
+      ${studios.length ? `
+        <div class="list-block">
+          <div class="list-heading">Studio</div>
+          <div class="studio-chips">
+            ${studios.map(e => `<button class="studio-chip" data-action="openStudio" data-id="${e.node.id}" data-name="${esc(e.node.name)}">${esc(e.node.name)}</button>`).join('')}
+          </div>
+        </div>
+      ` : ''}
+
+      ${m.reviews?.nodes?.length ? `
+        <div class="list-block">
+          <div class="list-heading">Reviews</div>
+          ${m.reviews.nodes.map(r => `
+            <div class="review-item">
+              <div class="review-top">
+                <div class="review-user"><img src="${r.user?.avatar?.medium||''}" alt="">${esc(r.user?.name||'Anonymous')}</div>
+                <span class="review-score">${r.score}%</span>
+              </div>
+              ${r.summary ? `<div class="review-summary">${esc(r.summary)}</div>` : ''}
+              ${watchUrl ? '' : ''}
+              <a class="extlink" style="margin:6px 0 0;" href="${m.siteUrl||`https://anilist.co/anime/${m.id}`}/reviews" target="_blank" rel="noopener">↗ Read full review on AniList</a>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+
+      ${state.anilist ? `
+        <div class="list-block">
+          <div class="list-heading">Write a review</div>
+          <div class="review-form">
+            <input type="text" id="reviewSummary" maxlength="120" placeholder="Short summary (max 120 characters)">
+            <textarea id="reviewBody" placeholder="Your review (minimum 300 characters)&#10;This is submitted directly to your real AniList account."></textarea>
+            <div class="charcount" id="reviewCharcount">0 / 300 minimum</div>
+            <div class="score-row" style="margin-bottom:10px;">
+              <span style="font-size:12px;color:var(--sub);font-weight:700;">Score</span>
+              <input type="number" min="0" max="100" id="reviewScore" value="70">
+              <span style="font-size:11px;color:var(--sub);">/ 100</span>
+            </div>
+            <button class="btn primary" data-action="submitReview">Submit review to AniList</button>
+            <div id="reviewStatus" style="font-size:11.5px;margin-top:8px;"></div>
+          </div>
+        </div>
+      ` : ''}
+
+      ${c.loading ? `<div style="text-align:center;padding:14px;"><svg class="spin" viewBox="0 0 24 24" fill="none" stroke="#8b93a7" stroke-width="2"><circle cx="12" cy="12" r="9" stroke-dasharray="42" stroke-dashoffset="14"/></svg></div>` : ''}
+    </div>
+  `;
+}
+function scoreRowHtml(entry){
+  const fmt = state.anilist?.scoreFormat || 'POINT_10';
+  if (fmt === 'POINT_5') {
+    const val = Math.round((entry.score||0));
+    return `<div class="score-row"><span style="font-size:12px;color:var(--sub);font-weight:700;">Score</span><div class="score-stars">
+      ${[1,2,3,4,5].map(n => `<button class="${n<=val?'on':''}" data-action="setScoreStar" data-val="${n}">★</button>`).join('')}
+    </div></div>`;
+  }
+  if (fmt === 'POINT_3') {
+    const val = entry.score||0;
+    const opts = [[1,'😞'],[2,'😐'],[3,'😊']];
+    return `<div class="score-row"><span style="font-size:12px;color:var(--sub);font-weight:700;">Score</span><div class="score-smiley">
+      ${opts.map(([n,e]) => `<button class="${n===val?'on':''}" data-action="setScoreStar" data-val="${n}">${e}</button>`).join('')}
+    </div></div>`;
+  }
+  const max = fmt === 'POINT_100' ? 100 : 10;
+  const step = fmt === 'POINT_10_DECIMAL' ? '0.1' : '1';
+  return `<div class="score-row"><span style="font-size:12px;color:var(--sub);font-weight:700;">Score</span>
+    <input type="number" min="0" max="${max}" step="${step}" value="${entry.score||0}" data-role="scoreInput">
+    <span style="font-size:11px;color:var(--sub);">/ ${max}</span>
+    <button class="btn ghost" style="padding:6px 10px;font-size:11px;" data-action="saveScoreInput">Save</button>
+  </div>`;
+}
+function renderStudioModal(c){
+  const s = c.detail;
+  return `
+    <div class="hero">
+      <div>
+        <h2>${esc(c.data.name)}</h2>
+        <div class="sub">${s ? (s.isAnimationStudio ? 'Animation studio' : 'Studio') : ''}</div>
+      </div>
+    </div>
+    <div class="modal-body" style="padding-top:0;">
+      ${c.loading ? spinnerHtml() : (s ? `<div class="grid" style="padding:0;">${(s.media?.nodes||[]).map(cardHtml).join('')}</div>` : `<div class="empty">Could not load studio.</div>`)}
+    </div>
+  `;
+}
+function renderPersonModal(c){
+  const p = c.detail;
+  return `
+    <div class="hero">
+      <img src="${p?.image?.large||''}" alt="">
+      <div>
+        <h2>${esc(c.data.name)}</h2>
+        <div class="sub">${p?.primaryOccupations?.join(' · ')||''}</div>
+      </div>
+    </div>
+    <div class="modal-body" style="padding-top:0;">
+      <div class="list-heading">Known for</div>
+      ${c.loading ? spinnerHtml() : (p ? `<div class="grid" style="padding:0;">${(p.staffMedia?.edges||[]).map(e=>cardHtml(e.node)).join('')}</div>` : `<div class="empty">Could not load profile.</div>`)}
+    </div>
+  `;
 }
 
-/* ============================== ACTIONS: like/dislike/watchlist ============================== */
+/* ============================== ACTIONS: like + list entry ============================== */
 async function doLike(m){
   const i = state.local.liked.indexOf(m.id);
-  if (i>=0) state.local.liked.splice(i,1); else { state.local.liked.push(m.id); state.local.disliked = state.local.disliked.filter(x=>x!==m.id); }
+  if (i>=0) state.local.liked.splice(i,1); else { state.local.liked.push(m.id); }
   persistPrefs();
   if (state.anilist) { try { await alToggleFavourite(m.id); } catch(e){} }
   render();
 }
-async function doDislike(m){
-  const i = state.local.disliked.indexOf(m.id);
-  if (i>=0) state.local.disliked.splice(i,1); else { state.local.disliked.push(m.id); state.local.liked = state.local.liked.filter(x=>x!==m.id); }
-  persistPrefs(); render();
-}
-async function doWatchlist(m){
-  const inList = isInWatchlist(m.id);
-  if (!state.anilist) { alert('Connect AniList in Settings first to save a real watchlist.'); return; }
+async function setEntryStatus(status){
+  const c = curModal(); if (!c || c.type!=='anime') return;
+  if (!state.anilist) { alert('Connect AniList in Settings first.'); return; }
   try {
-    if (inList) { await alRemoveFromWatchlist(m.id); state.mylist.al = state.mylist.al.filter(x=>x.id!==m.id); }
-    else { await alAddToWatchlist(m.id); state.mylist.al.push(m); }
+    const saved = await alSaveEntry(c.data.id, { status, progress: c.entry?.progress||0, score: c.entry?.score||0 });
+    c.entry = saved;
+    syncMylistCache(c.data, saved);
     render();
-  } catch(e){ alert('Watchlist sync failed: ' + e.message); }
+  } catch(e){ alert('Could not update AniList: ' + e.message); }
+}
+async function bumpProgress(delta){
+  const c = curModal(); if (!c || c.type!=='anime' || !c.entry) return;
+  const max = c.data.episodes || c.detail?.episodes || null;
+  let next = (c.entry.progress||0) + delta;
+  if (next < 0) next = 0;
+  if (max && next > max) next = max;
+  try {
+    const saved = await alSaveEntry(c.data.id, { status: c.entry.status, progress: next, score: c.entry.score||0 });
+    c.entry = saved;
+    syncMylistCache(c.data, saved);
+    render();
+  } catch(e){ alert('Could not update AniList: ' + e.message); }
+}
+async function setScore(score){
+  const c = curModal(); if (!c || c.type!=='anime' || !c.entry) return;
+  try {
+    const saved = await alSaveEntry(c.data.id, { status: c.entry.status, progress: c.entry.progress||0, score });
+    c.entry = saved;
+    syncMylistCache(c.data, saved);
+    render();
+  } catch(e){ alert('Could not update AniList: ' + e.message); }
+}
+async function removeCurrentEntry(){
+  const c = curModal(); if (!c || c.type!=='anime' || !c.entry) return;
+  try {
+    await alDeleteEntry(c.entry.id);
+    for (const k in state.mylist.byStatus) state.mylist.byStatus[k] = state.mylist.byStatus[k].filter(x=>x.id!==c.data.id);
+    c.entry = null;
+    render();
+  } catch(e){ alert('Could not update AniList: ' + e.message); }
+}
+function syncMylistCache(media, entry){
+  for (const k in state.mylist.byStatus) state.mylist.byStatus[k] = state.mylist.byStatus[k].filter(x=>x.id!==media.id);
+  if (!state.mylist.byStatus[entry.status]) state.mylist.byStatus[entry.status] = [];
+  state.mylist.byStatus[entry.status].push({ ...media, _entry: entry });
 }
 
 /* ============================== EVENT DELEGATION ============================== */
 function bindDynamic(){
-  // re-attach observer for browse if present
-  if (state.tab === 'browse' && state.browse.genre) setupBrowseObserver();
+  if (state.tab === 'browse' && state.browse.mode !== 'pick') setupBrowseObserver();
 }
 document.addEventListener('click', async (ev) => {
   const t = ev.target.closest('[data-action]');
   if (!t) return;
   const action = t.dataset.action;
 
-  if (action === 'pickBrowseGenre') { state.browse = { genre: t.dataset.genre, items:[], page:1, hasNext:true, loading:false, error:null }; render(); fetchBrowsePage(t.dataset.genre, 1); }
-  else if (action === 'backBrowse') { browseObserver && browseObserver.disconnect(); state.browse = { genre:null, items:[], page:1, hasNext:true, loading:false, error:null }; render(); }
-  else if (action === 'openMedia') { openModal(JSON.parse(t.dataset.mediajson)); }
-  else if (action === 'closeModal') { closeModal(); }
-  else if (action === 'closeModalBg') { if (ev.target.classList.contains('modal-wrap')) closeModal(); }
-  else if (action === 'playModal') {
-    const wrap = document.getElementById('videoWrap');
-    wrap.innerHTML = `<iframe src="${trailerEmbed(state.modalMedia.trailer)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+  if (action === 'pickBrowseGenre') {
+    state.browse = { mode:'genre', genre: t.dataset.genre, search:'', items:[], page:1, hasNext:true, loading:false, error:null };
+    render(); fetchBrowsePage(1);
   }
-  else if (action === 'modalLike') { await doLike(state.modalMedia); renderModal(); }
-  else if (action === 'modalDislike') { await doDislike(state.modalMedia); renderModal(); }
-  else if (action === 'modalWatchlist') { await doWatchlist(state.modalMedia); renderModal(); }
+  else if (action === 'backBrowse') { browseObserver && browseObserver.disconnect(); state.browse = { mode:'pick', genre:null, search:'', items:[], page:1, hasNext:true, loading:false, error:null }; render(); }
+  else if (action === 'clearSearch') { state.browse.search=''; state.browse.mode='pick'; state.browse.items=[]; render(); }
+  else if (action === 'openMedia') { openAnimeModal(JSON.parse(t.dataset.mediajson)); }
+  else if (action === 'openPerson') { openPersonModal(Number(t.dataset.id), t.dataset.name); }
+  else if (action === 'openStudio') { openStudioModal(Number(t.dataset.id), t.dataset.name); }
+  else if (action === 'modalBack') { popModal(); }
+  else if (action === 'closeModal') { closeAllModals(); }
+  else if (action === 'closeModalBg') { if (ev.target.classList.contains('modal-wrap')) closeAllModals(); }
+  else if (action === 'playModal') {
+    const c = curModal();
+    const wrap = document.getElementById('videoWrap');
+    wrap.innerHTML = `<iframe src="${trailerEmbed(c.data.trailer)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+  }
+  else if (action === 'modalLike') { const c = curModal(); if (c) { await doLike(c.data); renderModal(); } }
+  else if (action === 'setStatus') { await setEntryStatus(t.dataset.status); }
+  else if (action === 'progUp') { await bumpProgress(1); }
+  else if (action === 'progDown') { await bumpProgress(-1); }
+  else if (action === 'setScoreStar') { await setScore(Number(t.dataset.val)); }
+  else if (action === 'saveScoreInput') {
+    const input = document.getElementById('scoreInput') || document.querySelector('[data-role="scoreInput"]');
+    if (input) await setScore(parseFloat(input.value) || 0);
+  }
+  else if (action === 'removeEntry') { await removeCurrentEntry(); }
+  else if (action === 'submitReview') {
+    const c = curModal(); if (!c || c.type!=='anime') return;
+    const summary = document.getElementById('reviewSummary').value.trim();
+    const body = document.getElementById('reviewBody').value.trim();
+    const score = Number(document.getElementById('reviewScore').value) || 0;
+    const statusEl = document.getElementById('reviewStatus');
+    if (body.length < 300) { statusEl.style.color = 'var(--red)'; statusEl.textContent = 'Review body needs to be at least 300 characters.'; return; }
+    if (!summary) { statusEl.style.color = 'var(--red)'; statusEl.textContent = 'Add a short summary first.'; return; }
+    statusEl.style.color = 'var(--sub)'; statusEl.textContent = 'Submitting…';
+    try {
+      await alSaveReview(c.data.id, { summary, body, score });
+      statusEl.style.color = 'var(--green)'; statusEl.textContent = 'Review submitted to AniList ✓';
+    } catch(e) { statusEl.style.color = 'var(--red)'; statusEl.textContent = 'Failed: ' + e.message; }
+  }
 
   else if (action === 'pickSwipeGenre') {
     state.swipe = { genre: t.dataset.genre, queue:[], idx:0, playing:false, loading:false, error:null, seenPages:new Set() };
@@ -658,9 +1060,14 @@ document.addEventListener('click', async (ev) => {
   else if (action === 'backSwipe') { state.swipe = { genre:null, queue:[], idx:0, playing:false, loading:false, error:null, seenPages:new Set() }; render(); }
   else if (action === 'playSwipe') { state.swipe.playing = true; render(); }
   else if (action === 'swipeSkip') { advanceSwipe(); }
-  else if (action === 'swipeDislike') { const c = state.swipe.queue[state.swipe.idx]; if (c) await doDislike(c); advanceSwipe(); }
   else if (action === 'swipeLike') { const c = state.swipe.queue[state.swipe.idx]; if (c) await doLike(c); advanceSwipe(); }
-  else if (action === 'swipeWatchlist') { const c = state.swipe.queue[state.swipe.idx]; if (c) { await doWatchlist(c); render(); } }
+  else if (action === 'swipePlan') {
+    const c = state.swipe.queue[state.swipe.idx];
+    if (c) {
+      if (!state.anilist) { alert('Connect AniList in Settings first.'); }
+      else { try { const saved = await alSaveEntry(c.id, { status:'PLANNING', progress:0, score:0 }); syncMylistCache(c, saved); } catch(e){ alert('Could not update AniList: ' + e.message); } }
+    }
+  }
 
   else if (action === 'myTab') { state.mylist.tab = t.dataset.key; render(); }
 
@@ -670,11 +1077,19 @@ document.addEventListener('click', async (ev) => {
     LS.set('al_client_id', cid);
     location.href = alAuthUrl(cid);
   }
-  else if (action === 'disconnectAL') { state.anilist = null; LS.set('al_auth', null); state.mylist.al = []; myListLoaded=false; render(); }
+  else if (action === 'disconnectAL') { state.anilist = null; LS.set('al_auth', null); state.mylist.byStatus = { CURRENT:[], PLANNING:[], COMPLETED:[], PAUSED:[], DROPPED:[], REPEATING:[] }; myListLoaded=false; render(); }
 
   else if (action === 'setMode') { applyTheme({ family: (CATPPUCCIN[state.theme.family] ? 'orange' : state.theme.family), mode: t.dataset.mode }); render(); }
   else if (action === 'setFamily') { applyTheme({ family: t.dataset.family, mode: state.theme.mode === 'light' ? 'light' : 'dark' }); render(); }
   else if (action === 'setCatppuccin') { applyTheme({ family: t.dataset.family, mode: t.dataset.family === 'catppuccin-latte' ? 'light' : 'dark' }); render(); }
+});
+document.addEventListener('input', (ev) => {
+  if (ev.target.dataset.role === 'browseSearch') onBrowseSearchInput(ev.target.value);
+  if (ev.target.id === 'reviewBody') {
+    const n = ev.target.value.trim().length;
+    const el = document.getElementById('reviewCharcount');
+    if (el) { el.textContent = `${n} / 300 minimum`; el.classList.toggle('bad', n < 300); }
+  }
 });
 function advanceSwipe(){ state.swipe.playing = false; state.swipe.idx++; if (state.swipe.queue.length - state.swipe.idx < 5 && state.swipe.genre) fetchSwipeMore(state.swipe.genre); render(); }
 
@@ -695,7 +1110,9 @@ document.getElementById('tabs').addEventListener('click', (ev) => {
     state.genresError = 'Could not load categories from AniList: ' + e.message;
   }
   if (state.anilist?.token && !state.anilist.user) {
-    try { state.anilist.user = await alFetchViewer(); LS.set('al_auth', state.anilist); } catch(e){}
+    try { const u = await alFetchViewer(); state.anilist.user = u; state.anilist.scoreFormat = u.mediaListOptions?.scoreFormat || 'POINT_10'; LS.set('al_auth', state.anilist); } catch(e){}
+  } else if (state.anilist?.token && !state.anilist.scoreFormat) {
+    try { const u = await alFetchViewer(); state.anilist.scoreFormat = u.mediaListOptions?.scoreFormat || 'POINT_10'; LS.set('al_auth', state.anilist); } catch(e){}
   }
   render();
 })();
