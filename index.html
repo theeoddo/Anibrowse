@@ -203,6 +203,13 @@
   .hero img{ width:84px; height:84px; border-radius:16px; object-fit:cover; background:var(--card-hi); }
   .hero h2{ margin:0 0 4px; font-size:17px; }
   .hero .sub{ font-size:12px; color:var(--sub); font-weight:700; }
+  .formattag{ font-size:9.5px; font-weight:800; color:var(--sub); padding:0 9px 9px; letter-spacing:.2px; }
+  .season-row{ display:flex; align-items:center; gap:11px; width:100%; text-align:left; background:var(--bg2);
+    border:1px solid var(--line); border-radius:12px; padding:8px; margin-bottom:8px; cursor:pointer; }
+  .season-row img{ width:46px; height:65px; object-fit:cover; border-radius:8px; background:var(--card-hi); flex-shrink:0; }
+  .season-info{ flex:1; min-width:0; }
+  .season-title{ font-size:12.5px; font-weight:800; }
+  .season-sub{ font-size:11px; color:var(--sub); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   a{ color:inherit; }
 </style>
 </head>
@@ -307,9 +314,16 @@ const MEDIA_FIELDS = `
   id idMal
   title{ romaji english }
   coverImage{ large color }
-  averageScore episodes status season seasonYear genres description
+  averageScore episodes status season seasonYear genres description format
   trailer{ id site thumbnail }
+  relations{ edges{ relationType node{ id format } } }
 `;
+const SEASON_WALK_QUERY = `query($id:Int){
+  Media(id:$id){
+    id
+    relations{ edges{ relationType node{ id title{ romaji english } coverImage{ large color } episodes seasonYear format averageScore } } }
+  }
+}`;
 const MEDIA_QUERY = `query($page:Int,$perPage:Int,$genre:String){
   Page(page:$page, perPage:$perPage){
     pageInfo{ hasNextPage }
@@ -498,8 +512,10 @@ function statusOf(id){
   for (const k in state.mylist.byStatus) { if (state.mylist.byStatus[k].some(x=>x.id===id)) return k; }
   return null;
 }
+const FORMAT_TAGS = { MOVIE:'🎬 Movie', OVA:'📀 OVA', ONA:'📀 ONA', SPECIAL:'✨ Special', TV_SHORT:'📺 TV Short', MUSIC:'🎵 Music' };
 function cardHtml(m){
   const st = statusOf(m.id);
+  const tag = FORMAT_TAGS[m.format];
   return `<div class="card" data-action="openMedia" data-mediajson='${esc(JSON.stringify(m))}'>
     <div class="thumb" style="background:${m.coverImage?.color||'#222'}">
       <img src="${m.coverImage?.large||''}" loading="lazy" alt="">
@@ -508,7 +524,39 @@ function cardHtml(m){
       ${isLiked(m.id) ? `<span class="badge like">♥</span>` : ''}
     </div>
     <div class="title">${esc(titleOf(m))}</div>
+    ${tag ? `<div class="formattag">${tag}</div>` : ''}
   </div>`;
+}
+function seriesCardHtml(m){
+  return `<div class="card" data-action="openSeries" data-mediajson='${esc(JSON.stringify(m))}'>
+    <div class="thumb" style="background:${m.coverImage?.color||'#222'}">
+      <img src="${m.coverImage?.large||''}" loading="lazy" alt="">
+      ${m.averageScore ? `<span class="badge score">${m.averageScore}%</span>` : ''}
+    </div>
+    <div class="title">${esc(titleOf(m))}</div>
+    <div class="formattag" style="color:var(--accent);">📺 Series — tap for seasons</div>
+  </div>`;
+}
+// For discovery grids (Browse / Studio / Person pages): collapse a TV show's sequel seasons
+// into the first season's card, which opens a unified "series" page listing every season.
+// Movies (and OVAs/specials/etc) are never collapsed — just tagged, per format, on their own card.
+function seasonEdges(m){
+  const edges = m.relations?.edges || [];
+  const isTV = f => f === 'TV' || f === 'TV_SHORT';
+  return {
+    prequelTV: edges.find(e => e.relationType === 'PREQUEL' && isTV(e.node.format)),
+    sequelTV: edges.find(e => e.relationType === 'SEQUEL' && isTV(e.node.format)),
+  };
+}
+function gridHtml(items){
+  return items.map(m => {
+    if (m.format === 'TV' || m.format === 'TV_SHORT') {
+      const { prequelTV, sequelTV } = seasonEdges(m);
+      if (prequelTV) return ''; // a later season — reachable through its first season's series page instead
+      if (sequelTV) return seriesCardHtml(m);
+    }
+    return cardHtml(m);
+  }).join('');
 }
 
 /* ============================== BROWSE ============================== */
@@ -532,7 +580,7 @@ function renderBrowse(){
       <span class="chip" style="background:${chipColor}">${label}</span>
     </div>
     ${b.error ? `<div class="err">${esc(b.error)}</div>` : ''}
-    <div class="grid" id="browseGrid">${b.items.map(cardHtml).join('')}</div>
+    <div class="grid" id="browseGrid">${gridHtml(b.items)}</div>
     <div class="sentinel" id="browseSentinel">${b.loading ? spinnerHtml() : (!b.hasNext && b.items.length ? '— end of the list —' : (!b.items.length && !b.loading ? '<div class="empty">No results.</div>' : ''))}</div>
   `;
 }
@@ -742,6 +790,27 @@ async function loadAnimeModalExtras(id){
     if (c) { c.detail = detail; c.entry = entry; c.loading = false; render(); }
   } catch(e){ if (c) { c.loading = false; c.error = e.message; render(); } }
 }
+function openSeriesModal(m){
+  state.modalStack.push({ type:'series', data: m, seasons:null, loading:true });
+  render();
+  loadSeriesChain(m.id, m);
+}
+async function loadSeriesChain(rootId, root){
+  const chain = [root];
+  try {
+    let current = root;
+    for (let i=0; i<12; i++){
+      const data = await alQuery(SEASON_WALK_QUERY, { id: current.id });
+      const edges = data.Media?.relations?.edges || [];
+      const next = edges.find(e => e.relationType==='SEQUEL' && (e.node.format==='TV'||e.node.format==='TV_SHORT'));
+      if (!next) break;
+      current = next.node;
+      chain.push(current);
+    }
+  } catch(e){ /* show whatever we found so far */ }
+  const c = state.modalStack.find(x => x.type==='series' && x.data.id===rootId);
+  if (c) { c.seasons = chain; c.loading = false; render(); }
+}
 function popModal(){ state.modalStack.pop(); render(); }
 function closeAllModals(){ state.modalStack = []; render(); }
 
@@ -753,6 +822,7 @@ function renderModal(){
   let inner;
   if (c.type === 'anime') inner = renderAnimeModal(c);
   else if (c.type === 'studio') inner = renderStudioModal(c);
+  else if (c.type === 'series') inner = renderSeriesModal(c);
   else inner = renderPersonModal(c);
   host.innerHTML = `
     <div class="modal-wrap" data-action="closeModalBg">
@@ -916,6 +986,29 @@ function scoreRowHtml(entry){
     <button class="btn ghost" style="padding:6px 10px;font-size:11px;" data-action="saveScoreInput">Save</button>
   </div>`;
 }
+function renderSeriesModal(c){
+  const seasons = c.seasons || [c.data];
+  return `
+    <div class="hero">
+      <img src="${c.data.coverImage?.large||''}" alt="">
+      <div><h2>${esc(titleOf(c.data))}</h2><div class="sub">${c.loading ? 'Finding seasons…' : `${seasons.length} season${seasons.length>1?'s':''}`}</div></div>
+    </div>
+    <div class="modal-body" style="padding-top:0;">
+      <div class="list-heading">Seasons</div>
+      ${seasons.map((s,i) => `
+        <button class="season-row" data-action="openMedia" data-mediajson='${esc(JSON.stringify(s))}'>
+          <img src="${s.coverImage?.large||''}" alt="">
+          <div class="season-info">
+            <div class="season-title">Season ${i+1}${s.seasonYear?` · ${s.seasonYear}`:''}</div>
+            <div class="season-sub">${esc(titleOf(s))}${s.episodes?` · ${s.episodes} eps`:''}</div>
+          </div>
+          ${s.averageScore ? `<span class="review-score">${s.averageScore}%</span>` : ''}
+        </button>
+      `).join('')}
+      ${c.loading ? spinnerHtml() : ''}
+    </div>
+  `;
+}
 function renderStudioModal(c){
   const s = c.detail;
   return `
@@ -926,7 +1019,7 @@ function renderStudioModal(c){
       </div>
     </div>
     <div class="modal-body" style="padding-top:0;">
-      ${c.loading ? spinnerHtml() : (s ? `<div class="grid" style="padding:0;">${(s.media?.nodes||[]).map(cardHtml).join('')}</div>` : `<div class="empty">Could not load studio.</div>`)}
+      ${c.loading ? spinnerHtml() : (s ? `<div class="grid" style="padding:0;">${gridHtml(s.media?.nodes||[])}</div>` : `<div class="empty">Could not load studio.</div>`)}
     </div>
   `;
 }
@@ -942,7 +1035,7 @@ function renderPersonModal(c){
     </div>
     <div class="modal-body" style="padding-top:0;">
       <div class="list-heading">Known for</div>
-      ${c.loading ? spinnerHtml() : (p ? `<div class="grid" style="padding:0;">${(p.staffMedia?.edges||[]).map(e=>cardHtml(e.node)).join('')}</div>` : `<div class="empty">Could not load profile.</div>`)}
+      ${c.loading ? spinnerHtml() : (p ? `<div class="grid" style="padding:0;">${gridHtml((p.staffMedia?.edges||[]).map(e=>e.node))}</div>` : `<div class="empty">Could not load profile.</div>`)}
     </div>
   `;
 }
@@ -1018,6 +1111,7 @@ document.addEventListener('click', async (ev) => {
   else if (action === 'backBrowse') { browseObserver && browseObserver.disconnect(); state.browse = { mode:'pick', genre:null, search:'', items:[], page:1, hasNext:true, loading:false, error:null }; render(); }
   else if (action === 'clearSearch') { state.browse.search=''; state.browse.mode='pick'; state.browse.items=[]; render(); }
   else if (action === 'openMedia') { openAnimeModal(JSON.parse(t.dataset.mediajson)); }
+  else if (action === 'openSeries') { openSeriesModal(JSON.parse(t.dataset.mediajson)); }
   else if (action === 'openPerson') { openPersonModal(Number(t.dataset.id), t.dataset.name); }
   else if (action === 'openStudio') { openStudioModal(Number(t.dataset.id), t.dataset.name); }
   else if (action === 'modalBack') { popModal(); }
