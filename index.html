@@ -23,6 +23,7 @@
     --red:#ff5c6c;       /* semantic: "dislike" — constant across themes */
   }
   *{box-sizing:border-box;}
+  button, input, textarea{ font-family:inherit; color:var(--text); }
   html,body{height:100%;}
   body{
     margin:0; background:var(--bg); color:var(--text);
@@ -146,6 +147,29 @@
   .swatches{ display:flex; flex-wrap:wrap; gap:10px; }
   .swatch{ width:34px; height:34px; border-radius:50%; border:2px solid transparent; cursor:pointer; box-shadow:inset 0 0 0 1px rgba(0,0,0,.2); }
   .swatch.on{ border-color:var(--text); transform:scale(1.08); }
+  .customswatch-wrap{ display:flex; flex-direction:column; align-items:center; gap:5px; }
+  input.customswatch{ -webkit-appearance:none; appearance:none; width:34px; height:34px; border-radius:50%; border:2px solid var(--line); padding:0; cursor:pointer; background:none; }
+  input.customswatch::-webkit-color-swatch-wrapper{ padding:0; border-radius:50%; }
+  input.customswatch::-webkit-color-swatch{ border:none; border-radius:50%; }
+  .customswatch-label{ font-size:9.5px; font-weight:800; color:var(--sub); }
+
+  /* Material 3 Expressive: bold, varied, generous corner radii; pill-shaped controls */
+  .theme-expressive .card{ border-radius:26px; }
+  .theme-expressive .thumb{ border-radius:22px 22px 0 0; }
+  .theme-expressive .modal{ border-radius:30px 30px 0 0; }
+  .theme-expressive .card-box, .theme-expressive .review-item, .theme-expressive .season-row{ border-radius:22px; }
+  .theme-expressive .btn, .theme-expressive .playbtn, .theme-expressive .chip, .theme-expressive .genretag,
+  .theme-expressive .status-chip, .theme-expressive .mytab, .theme-expressive .studio-chip{ border-radius:999px; }
+  .theme-expressive .searchbar{ border-radius:999px; }
+
+  /* Fluent 2: translucent "Acrylic" layered surfaces, tighter corners, subtle blur depth */
+  .theme-fluent .card, .theme-fluent .modal, .theme-fluent .searchbar, .theme-fluent .review-item,
+  .theme-fluent .card-box, .theme-fluent .season-row, .theme-fluent .status-chip, .theme-fluent .mytab{
+    backdrop-filter: blur(20px) saturate(1.5); -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  }
+  .theme-fluent .card{ border-radius:8px; }
+  .theme-fluent .thumb{ border-radius:7px 7px 0 0; }
+  .theme-fluent .modal{ border-radius:12px 12px 0 0; }
 
   /* search */
   .searchbar{ display:flex; align-items:center; gap:8px; margin:12px 16px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:9px 12px; }
@@ -171,7 +195,9 @@
   .score-row{ display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
   .score-row input[type=number]{ width:70px; padding:7px 9px; border-radius:8px; border:1px solid var(--line); background:var(--bg2); color:var(--text); font-size:13px; }
   .score-stars{ display:flex; gap:4px; }
-  .score-stars button, .score-smiley button{ background:none; border:none; font-size:20px; cursor:pointer; opacity:.35; }
+  .score-stars button, .score-smiley button{ background:none; border:none; font-size:20px; cursor:pointer; opacity:.35; color:var(--sub); }
+  .score-stars button.on{ color:var(--yellow); }
+  .score-smiley button.on{ opacity:1; }
   .score-stars button.on, .score-smiley button.on{ opacity:1; }
   .removebtn{ font-size:11.5px; color:var(--red); background:none; border:none; cursor:pointer; font-weight:700; padding:0; }
 
@@ -204,7 +230,7 @@
   .hero h2{ margin:0 0 4px; font-size:17px; }
   .hero .sub{ font-size:12px; color:var(--sub); font-weight:700; }
   .formattag{ font-size:9.5px; font-weight:800; color:var(--sub); padding:0 9px 9px; letter-spacing:.2px; }
-  .season-row{ display:flex; align-items:center; gap:11px; width:100%; text-align:left; background:var(--bg2);
+  .season-row{ display:flex; align-items:center; gap:11px; width:100%; text-align:left; background:var(--bg2); color:var(--text);
     border:1px solid var(--line); border-radius:12px; padding:8px; margin-bottom:8px; cursor:pointer; }
   .season-row img{ width:46px; height:65px; object-fit:cover; border-radius:8px; background:var(--card-hi); flex-shrink:0; }
   .season-info{ flex:1; min-width:0; }
@@ -248,6 +274,8 @@ const NEUTRAL_LIGHT = { bg:'#f4f5f8', bg2:'#ffffff', card:'#ffffff', cardHi:'#ee
 const ACCENTS = {
   red:'#ff5c6c', orange:'#ff7a3d', yellow:'#ffd23f', green:'#5fe089', teal:'#2fd1c5',
   cyan:'#4dd0e1', blue:'#5b9dff', indigo:'#7c83ff', purple:'#b083ff', pink:'#ff5da2',
+  crimson:'#e63950', amber:'#ffb100', lime:'#a6e22e', emerald:'#12b886', sky:'#38bdf8',
+  cobalt:'#2f5fff', violet:'#8b5cf6', magenta:'#e935c1', rose:'#fb7185', slate:'#94a3b8',
 };
 const PASTELS = {
   'pastel-pink':'#ffb3c6', 'pastel-blue':'#a8d8ff', 'pastel-green':'#b8f2c9',
@@ -261,10 +289,40 @@ const CATPPUCCIN = {
   'catppuccin-mocha':     { bg:'#1e1e2e', bg2:'#181825', card:'#181825', cardHi:'#313244', line:'#313244', text:'#cdd6f4', sub:'#9399b2', accent:'#cba6f7' },
 };
 const CATPPUCCIN_LABELS = { 'catppuccin-latte':'Latte', 'catppuccin-frappe':'Frappé', 'catppuccin-macchiato':'Macchiato', 'catppuccin-mocha':'Mocha' };
-
+// Two fully custom, user-colorable themes styled after real design languages:
+// - "custom-expressive": Google's Material 3 Expressive (bold varied shapes, big tonal surfaces derived from one seed color)
+// - "custom-fluent": Microsoft's Fluent 2 (translucent "Acrylic" layered surfaces, tighter corners, subtle depth)
+// Both read their accent from a per-theme color the person picks, stored separately from the theme selector itself.
+function customColorFor(family){
+  return LS.get(family === 'custom-expressive' ? 'custom_expressive_color' : 'custom_fluent_color',
+    family === 'custom-expressive' ? '#7c5cff' : '#3b82f6');
+}
 function themeVars(theme){
   if (CATPPUCCIN[theme.family]) return CATPPUCCIN[theme.family];
   const base = theme.mode === 'light' ? NEUTRAL_LIGHT : NEUTRAL_DARK;
+  if (theme.family === 'custom-expressive') {
+    const accent = theme.customColor || customColorFor('custom-expressive');
+    // MD3-style dynamic color: tint every surface tone toward the seed color instead of using flat neutrals.
+    const mix = (basePct) => `color-mix(in srgb, ${base.bg2} ${basePct}%, ${accent})`;
+    return {
+      bg: `color-mix(in srgb, ${base.bg} 92%, ${accent})`,
+      bg2: mix(88), card: mix(80), cardHi: mix(70),
+      line: `color-mix(in srgb, ${base.line} 65%, ${accent})`,
+      text: base.text, sub: base.sub, accent,
+    };
+  }
+  if (theme.family === 'custom-fluent') {
+    const accent = theme.customColor || customColorFor('custom-fluent');
+    const light = theme.mode === 'light';
+    return {
+      bg: base.bg,
+      bg2: light ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.055)',
+      card: light ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.045)',
+      cardHi: light ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.09)',
+      line: light ? 'rgba(0,0,0,0.09)' : 'rgba(255,255,255,0.13)',
+      text: base.text, sub: base.sub, accent,
+    };
+  }
   const accent = ACCENTS[theme.family] || PASTELS[theme.family] || ACCENTS.orange;
   return { ...base, accent };
 }
@@ -279,6 +337,8 @@ function applyTheme(theme){
   root.setProperty('--text', v.text);
   root.setProperty('--sub', v.sub);
   root.setProperty('--accent', v.accent);
+  document.documentElement.classList.toggle('theme-expressive', theme.family === 'custom-expressive');
+  document.documentElement.classList.toggle('theme-fluent', theme.family === 'custom-fluent');
   state.theme = theme;
   LS.set('theme', theme);
 }
@@ -751,6 +811,19 @@ function renderSettings(){
             <button class="swatch ${state.theme.family===key?'on':''}" data-action="setCatppuccin" data-family="${key}" style="background:${v.accent}" title="${CATPPUCCIN_LABELS[key]}"></button>
           `).join('')}
         </div>
+
+        <div class="theme-label">Custom (pick your own accent color)</div>
+        <div class="swatches">
+          <div class="customswatch-wrap">
+            <input type="color" class="customswatch" data-family="custom-expressive" value="${customColorFor('custom-expressive')}" style="${state.theme.family==='custom-expressive'?'outline:2px solid var(--text);':''}">
+            <span class="customswatch-label">M3 Expressive</span>
+          </div>
+          <div class="customswatch-wrap">
+            <input type="color" class="customswatch" data-family="custom-fluent" value="${customColorFor('custom-fluent')}" style="${state.theme.family==='custom-fluent'?'outline:2px solid var(--text);':''}">
+            <span class="customswatch-label">Fluent 2</span>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--sub);margin-top:6px;">Tap a dot to open the color picker — picking a color switches to and applies that theme.</div>
       </div>
 
       <div class="divider"></div>
@@ -763,6 +836,8 @@ function renderSettings(){
 function isCatppuccin(){ return !!CATPPUCCIN[state.theme.family]; }
 function themeLabel(theme){
   if (CATPPUCCIN[theme.family]) return 'Catppuccin ' + CATPPUCCIN_LABELS[theme.family];
+  if (theme.family === 'custom-expressive') return `Material 3 Expressive (${theme.mode === 'light' ? 'Light' : 'Dark'})`;
+  if (theme.family === 'custom-fluent') return `Fluent 2 (${theme.mode === 'light' ? 'Light' : 'Dark'})`;
   const name = theme.family.replace('pastel-', 'Pastel ').replace(/^[a-z]/, c => c.toUpperCase());
   return `${name} (${theme.mode === 'light' ? 'Light' : 'Dark'})`;
 }
@@ -1183,6 +1258,12 @@ document.addEventListener('input', (ev) => {
     const n = ev.target.value.trim().length;
     const el = document.getElementById('reviewCharcount');
     if (el) { el.textContent = `${n} / 300 minimum`; el.classList.toggle('bad', n < 300); }
+  }
+  if (ev.target.classList.contains('customswatch')) {
+    const family = ev.target.dataset.family;
+    LS.set(family === 'custom-expressive' ? 'custom_expressive_color' : 'custom_fluent_color', ev.target.value);
+    applyTheme({ family, mode: state.theme.mode === 'light' ? 'light' : 'dark', customColor: ev.target.value });
+    render();
   }
 });
 function advanceSwipe(){ state.swipe.playing = false; state.swipe.idx++; if (state.swipe.queue.length - state.swipe.idx < 5 && state.swipe.genre) fetchSwipeMore(state.swipe.genre); render(); }
