@@ -31,6 +31,27 @@
     -webkit-font-smoothing:antialiased;
   }
   #app{ max-width:900px; margin:0 auto; height:100dvh; display:flex; flex-direction:column; background:var(--bg); }
+  @media (min-width:860px){
+    #app{
+      max-width:1200px; display:grid;
+      grid-template-columns:104px 1fr; grid-template-rows:auto 1fr;
+      grid-template-areas:"header header" "nav main";
+    }
+    #app > header{ grid-area:header; }
+    #app > main{ grid-area:main; overflow-y:auto; }
+    #app > nav.tabs{
+      grid-area:nav; grid-template-columns:1fr; grid-auto-rows:min-content; align-content:flex-start;
+      border-top:none; border-right:1px solid var(--line); padding-top:18px; gap:6px; padding-bottom:0;
+    }
+    nav.tabs button{ padding:14px 4px; }
+    .grid{ grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); }
+    .chips{ grid-template-columns:repeat(4,1fr); }
+    .modal-wrap{ align-items:center; }
+    .modal{ max-width:640px; max-height:88dvh; }
+  }
+  @media (min-width:1200px){
+    .grid{ grid-template-columns:repeat(auto-fill, minmax(165px,1fr)); }
+  }
   header{
     display:flex; align-items:center; justify-content:space-between;
     padding:12px 16px; border-bottom:1px solid var(--line); flex-shrink:0; gap:8px;
@@ -56,23 +77,39 @@
   }
   .pill.on{ border-color:var(--green); color:var(--green); }
   main{ flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .logo-text{ white-space:nowrap; }
   nav.tabs{
-    display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--line);
+    display:grid; grid-template-columns:repeat(5,1fr); border-top:1px solid var(--line);
     flex-shrink:0; padding-bottom:env(safe-area-inset-bottom); background:var(--bg2);
   }
   nav.tabs button{
     background:none; border:none; color:var(--sub); display:flex; flex-direction:column;
-    align-items:center; gap:3px; padding:10px 4px 8px; font-size:10px; font-weight:800; cursor:pointer;
+    align-items:center; gap:clamp(2px,0.6vw,4px); padding:clamp(8px,2vw,14px) 2px clamp(6px,1.6vw,10px);
+    font-size:clamp(9px,2.3vw,13px); font-weight:800; cursor:pointer;
   }
   nav.tabs button.active{ color:var(--accent); }
-  nav.tabs button svg{ width:20px; height:20px; }
+  nav.tabs button svg{ width:clamp(16px,4.2vw,24px); height:clamp(16px,4.2vw,24px); }
+  /* themed scrollbars instead of the browser default */
+  ::-webkit-scrollbar{ width:9px; height:9px; }
+  ::-webkit-scrollbar-track{ background:var(--bg); }
+  ::-webkit-scrollbar-thumb{ background:var(--line); border-radius:8px; }
+  ::-webkit-scrollbar-thumb:hover{ background:var(--accent); }
+  *{ scrollbar-width:thin; scrollbar-color:var(--line) var(--bg); }
   .section-title{ display:flex; align-items:center; gap:8px; margin:14px 16px 10px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; color:var(--sub);}
-  .chips{ display:flex; flex-wrap:wrap; gap:8px; padding:0 16px 16px; }
+  .chips{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; padding:0 16px 16px; }
   .chip{
     padding:8px 14px; border-radius:10px; font-weight:800; font-size:12.5px; color:#0a0a0a; cursor:pointer;
     border:none; box-shadow:0 2px 0 rgba(0,0,0,.25); transition:transform .1s;
   }
   .chip:active{ transform:scale(.95); }
+  .genretile{
+    position:relative; aspect-ratio:16/10; border-radius:16px; border:none; cursor:pointer; overflow:hidden;
+    display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-end; padding:12px;
+    color:#fff; text-align:left; transition:transform .12s;
+  }
+  .genretile:active{ transform:scale(.96); }
+  .genretile .emoji{ position:absolute; top:8px; right:10px; font-size:28px; opacity:.7; }
+  .genretile .gname{ font-weight:900; font-size:14.5px; text-shadow:0 1px 6px rgba(0,0,0,.4); position:relative; z-index:1; }
   .grid{
     display:grid; gap:12px; padding:0 16px 24px;
     grid-template-columns:repeat(auto-fill, minmax(clamp(120px,26vw,160px), 1fr));
@@ -104,8 +141,9 @@
   @media (min-width:640px){ .modal{ border-radius:18px; } }
   .modal .close{ position:absolute; top:10px; right:10px; z-index:2; background:rgba(0,0,0,.6); border:none;
     color:#fff; width:30px; height:30px; border-radius:50%; cursor:pointer; }
-  .video-wrap{ position:relative; width:100%; aspect-ratio:16/9; background:#000; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-  .video-wrap img.bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.35; }
+  .video-wrap{ position:relative; width:100%; aspect-ratio:16/9; background:var(--bg2); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .video-wrap img.bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(18px) brightness(.6); transform:scale(1.15); z-index:0; }
+  .video-wrap .playbtn, .video-wrap span{ position:relative; z-index:1; }
   .video-wrap iframe{ position:relative; width:100%; height:100%; border:none; }
   .playbtn{ position:relative; display:flex; align-items:center; gap:8px; padding:10px 18px; border-radius:999px;
     background:var(--accent); color:#0a0a0a; font-weight:800; border:none; cursor:pointer; }
@@ -244,15 +282,16 @@
   <header>
     <div class="logo">
       <span class="logo-badge"><svg viewBox="0 0 24 24" fill="var(--accent)"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
-      Ani<span class="g">Browse</span>
+      <span class="logo-text">Ani<span class="g">browse</span></span>
     </div>
     <div class="acct" id="acctBar"></div>
   </header>
   <main id="view"></main>
   <nav class="tabs" id="tabs">
     <button data-tab="browse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Browse</button>
-    <button data-tab="swipe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>Swipe</button>
+    <button data-tab="swipe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>Discover</button>
     <button data-tab="mylist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>My List</button>
+    <button data-tab="quiz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 .8 1 1.8v.5h6v-.5c0-1 .4-1.3 1-1.8A7 7 0 0 0 12 2z"/></svg>Match Me</button>
     <button data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.7.36 1.51.63 1.51 1z"/></svg>Settings</button>
   </nav>
 </div>
@@ -350,9 +389,10 @@ let state = {
   anilist: LS.get('al_auth', null),   // {token, user:{id,name,avatar}, scoreFormat}
   local: LS.get('local_prefs', { liked: [] }), // local-only likes, keyed by anilist id
   browse: { mode: 'pick', genre: null, search: '', items: [], page: 1, hasNext: true, loading: false, error: null },
-  swipe:  { genre: null, queue: [], idx: 0, playing: false, loading: false, error: null, seenPages: new Set() },
+  swipe:  { genre: null, mode: 'random', queue: [], idx: 0, page: 1, playing: false, loading: false, error: null, seenPages: new Set() },
   mylist: { tab: 'CURRENT', byStatus: { CURRENT:[], PLANNING:[], COMPLETED:[], PAUSED:[], DROPPED:[], REPEATING:[] }, loading: false, error: null },
   modalStack: [], // [{type:'anime'|'studio'|'person', data, detail, entry, loading}]
+  quiz: { step:0, answers:{}, done:false, loading:false, results:[] },
   theme: LS.get('theme', { family: 'orange', mode: 'dark' }),
 };
 applyTheme(state.theme);
@@ -374,14 +414,14 @@ const MEDIA_FIELDS = `
   id idMal
   title{ romaji english }
   coverImage{ large color }
-  averageScore episodes status season seasonYear genres description format
+  averageScore episodes status season seasonYear startDate{ year month day } genres description format
   trailer{ id site thumbnail }
   relations{ edges{ relationType node{ id format } } }
 `;
 const SEASON_WALK_QUERY = `query($id:Int){
   Media(id:$id){
     id
-    relations{ edges{ relationType node{ id title{ romaji english } coverImage{ large color } episodes seasonYear format averageScore } } }
+    relations{ edges{ relationType node{ id title{ romaji english } coverImage{ large color } episodes seasonYear startDate{ year month day } format averageScore } } }
   }
 }`;
 const MEDIA_QUERY = `query($page:Int,$perPage:Int,$genre:String){
@@ -401,17 +441,17 @@ const MEDIA_DETAIL_QUERY = `query($id:Int){
     ${MEDIA_FIELDS}
     siteUrl
     studios{ edges{ isMain node{ id name } } }
-    characters(sort:[ROLE,RELEVANCE], perPage:10){
+    characters(sort:[ROLE,RELEVANCE], perPage:25){
       edges{
         role
         node{ id name{ full } image{ medium } }
         voiceActors(language:JAPANESE){ id name{ full } image{ medium } }
       }
     }
-    staff(sort:[RELEVANCE], perPage:8){
+    staff(sort:[RELEVANCE], perPage:25){
       edges{ role node{ id name{ full } image{ medium } } }
     }
-    reviews(sort:RATING_DESC, perPage:5){
+    reviews(sort:RATING_DESC, perPage:25){
       nodes{ id summary rating ratingAmount score user{ id name avatar{ medium } } }
     }
   }
@@ -500,9 +540,16 @@ async function alFetchStaff(id){
 
 /* ============================== HELPERS ============================== */
 function titleOf(m){ return m.title?.english || m.title?.romaji || 'Untitled'; }
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function formatDate(sd){
+  if (!sd || !sd.year) return '';
+  if (sd.month && sd.day) return `${MONTHS[sd.month-1]} ${sd.day}, ${sd.year}`;
+  if (sd.month) return `${MONTHS[sd.month-1]} ${sd.year}`;
+  return String(sd.year);
+}
 function trailerEmbed(t){
   if (!t) return null;
-  if (t.site === 'youtube') return `https://www.youtube.com/embed/${t.id}?autoplay=1&rel=0&playsinline=1`;
+  if (t.site === 'youtube') return `https://www.youtube.com/embed/${t.id}?autoplay=1&rel=0&playsinline=1&cc_load_policy=1&cc_lang_pref=en&hl=en`;
   if (t.site === 'dailymotion') return `https://www.dailymotion.com/embed/video/${t.id}?autoplay=1`;
   return null;
 }
@@ -543,6 +590,8 @@ function render(){
     view.innerHTML = renderSwipe();
   } else if (state.tab === 'mylist') {
     view.innerHTML = renderMyList(); loadMyList();
+  } else if (state.tab === 'quiz') {
+    view.innerHTML = renderQuiz();
   } else if (state.tab === 'settings') {
     view.innerHTML = renderSettings();
   }
@@ -562,9 +611,19 @@ function spinnerHtml(){
     <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="#8b93a7" stroke-width="2"><circle cx="12" cy="12" r="9" stroke-dasharray="42" stroke-dashoffset="14"/></svg>
   </div>`;
 }
+const GENRE_EMOJI = {
+  Action:'⚔️', Adventure:'🗺️', Comedy:'😂', Drama:'🎭', Ecchi:'💦', Fantasy:'🧙', Hentai:'🔞',
+  Horror:'👻', 'Mahou Shoujo':'✨', Mecha:'🤖', Music:'🎵', Mystery:'🔍', Psychological:'🧠',
+  Romance:'💗', 'Sci-Fi':'🚀', 'Slice of Life':'🍃', Sports:'⚽', Supernatural:'🌙', Thriller:'🔪',
+};
 function chipsHtml(title, action){
   return `<div class="section-title">${title}</div>
-  <div class="chips">${state.genres.map(g => `<button class="chip" style="background:${colorFor(g)}" data-action="${action}" data-genre="${esc(g)}">${esc(g)}</button>`).join('')}</div>`;
+  <div class="chips">${state.genres.map(g => `
+    <button class="genretile" style="background:linear-gradient(155deg, ${colorFor(g)}, color-mix(in srgb, ${colorFor(g)} 55%, black))" data-action="${action}" data-genre="${esc(g)}">
+      <span class="emoji">${GENRE_EMOJI[g] || '🎬'}</span>
+      <span class="gname">${esc(g)}</span>
+    </button>
+  `).join('')}</div>`;
 }
 const STATUS_LABELS = { CURRENT:'Watching', PLANNING:'Planning', COMPLETED:'Completed', PAUSED:'Paused', DROPPED:'Dropped', REPEATING:'Repeating' };
 const STATUS_COLORS = { CURRENT:'#5fe089', PLANNING:'#5b9dff', COMPLETED:'#b083ff', PAUSED:'#ffd23f', DROPPED:'#ff5c6c', REPEATING:'#2fd1c5' };
@@ -587,33 +646,39 @@ function cardHtml(m){
     ${tag ? `<div class="formattag">${tag}</div>` : ''}
   </div>`;
 }
-function seriesCardHtml(m){
+function seriesCardHtml(m, seasonCount, movieCount){
+  let label = `📺 ${seasonCount} season${seasonCount>1?'s':''}`;
+  if (movieCount>0) label += ` · 🎬 ${movieCount} movie${movieCount>1?'s':''}`;
   return `<div class="card" data-action="openSeries" data-mediajson='${esc(JSON.stringify(m))}'>
     <div class="thumb" style="background:${m.coverImage?.color||'#222'}">
       <img src="${m.coverImage?.large||''}" loading="lazy" alt="">
       ${m.averageScore ? `<span class="badge score">${m.averageScore}%</span>` : ''}
     </div>
     <div class="title">${esc(titleOf(m))}</div>
-    <div class="formattag" style="color:var(--accent);">📺 Series — tap for seasons</div>
+    <div class="formattag" style="color:var(--accent);">${label}</div>
   </div>`;
 }
 // For discovery grids (Browse / Studio / Person pages): collapse a TV show's sequel seasons
 // into the first season's card, which opens a unified "series" page listing every season.
-// Movies (and OVAs/specials/etc) are never collapsed — just tagged, per format, on their own card.
-function seasonEdges(m){
+// Movies are never collapsed as their own cards — they're just tagged — but they DO count
+// toward the franchise's label on its series card (e.g. "3 seasons · 1 movie").
+// Note: AniList doesn't always tag season-2+ as relationType SEQUEL — spin-off-titled
+// continuations (like Horimiya -piece-) are often SIDE_STORY/PARENT instead, so both are checked.
+const SEASON_RELATION_TYPES = ['SEQUEL', 'SIDE_STORY', 'PARENT'];
+function franchiseEdges(m){
   const edges = m.relations?.edges || [];
   const isTV = f => f === 'TV' || f === 'TV_SHORT';
-  return {
-    prequelTV: edges.find(e => e.relationType === 'PREQUEL' && isTV(e.node.format)),
-    sequelTV: edges.find(e => e.relationType === 'SEQUEL' && isTV(e.node.format)),
-  };
+  const prequel = edges.find(e => (e.relationType==='PREQUEL' || e.relationType==='PARENT') && isTV(e.node.format));
+  const sequelLike = edges.filter(e => SEASON_RELATION_TYPES.includes(e.relationType) && isTV(e.node.format));
+  const movieLike = edges.filter(e => SEASON_RELATION_TYPES.includes(e.relationType) && e.node.format === 'MOVIE');
+  return { prequel, sequelLike, movieLike };
 }
 function gridHtml(items){
   return items.map(m => {
     if (m.format === 'TV' || m.format === 'TV_SHORT') {
-      const { prequelTV, sequelTV } = seasonEdges(m);
-      if (prequelTV) return ''; // a later season — reachable through its first season's series page instead
-      if (sequelTV) return seriesCardHtml(m);
+      const { prequel, sequelLike, movieLike } = franchiseEdges(m);
+      if (prequel) return ''; // a later season — reachable through its first season's series page instead
+      return seriesCardHtml(m, 1 + sequelLike.length, movieLike.length);
     }
     return cardHtml(m);
   }).join('');
@@ -683,10 +748,16 @@ function onBrowseSearchInput(value){
   }, 450);
 }
 
-/* ============================== SWIPE ============================== */
+/* ============================== SWIPE / DISCOVER ============================== */
 function renderSwipe(){
   const s = state.swipe;
-  if (!s.genre) return chipsHtml('Swipe mode — choose a category', 'pickSwipeGenre');
+  if (!s.genre) {
+    const modeBar = `<div class="mode-toggle" style="margin:12px 16px 4px;">
+      <button class="modebtn ${s.mode!=='random'?'on':''}" data-action="setDiscoverMode" data-mode="popular">🔥 Popular</button>
+      <button class="modebtn ${s.mode==='random'?'on':''}" data-action="setDiscoverMode" data-mode="random">🎲 Random</button>
+    </div>`;
+    return modeBar + chipsHtml(`Discover — choose a category (${s.mode==='random'?'random pick':'most popular first'})`, 'pickSwipeGenre');
+  }
   const cur = s.queue[s.idx];
   return `
     <div style="display:flex;flex-direction:column;height:100%;">
@@ -720,15 +791,180 @@ async function fetchSwipeMore(genre){
   const s = state.swipe;
   s.loading = true; s.error = null; render();
   try {
-    let p = Math.floor(Math.random()*8)+1, tries=0;
-    while (s.seenPages.has(p) && tries<8){ p = Math.floor(Math.random()*8)+1; tries++; }
-    s.seenPages.add(p);
+    let p;
+    if (s.mode === 'random') {
+      let tries = 0; p = Math.floor(Math.random()*8)+1;
+      while (s.seenPages.has(p) && tries<8){ p = Math.floor(Math.random()*8)+1; tries++; }
+      s.seenPages.add(p);
+    } else {
+      p = s.page; s.page++;
+    }
     const data = await alQuery(MEDIA_QUERY, { page:p, perPage:20, genre });
-    const withT = data.Page.media.filter(m => trailerEmbed(m.trailer));
-    const rest = data.Page.media.filter(m => !trailerEmbed(m.trailer));
+    const eligible = data.Page.media.filter(m => {
+      if (m.format !== 'TV' && m.format !== 'TV_SHORT') return true;
+      return !franchiseEdges(m).prequel; // skip season 2+, its trailer belongs to its series page instead
+    });
+    const withT = eligible.filter(m => trailerEmbed(m.trailer));
+    const rest = eligible.filter(m => !trailerEmbed(m.trailer));
     s.queue = [...s.queue, ...withT, ...rest];
   } catch(e){ s.error = 'Could not reach AniList: ' + e.message; }
   s.loading = false; render();
+}
+
+/* ============================== MATCH ME QUIZ ============================== */
+// A pool of up to 20 questions. Not every question is shown to every person — a few
+// early answers (overall mood, "want something intense?") skip questions whose answer
+// would already be implied, so the path adapts instead of being a fixed static list.
+const QUIZ_POOL = [
+  { id:'mood', q:'What kind of mood are you in?', opts:[
+    { label:'😄 Light & fun', pts:{Comedy:3,'Slice of Life':1} },
+    { label:'🖤 Dark & intense', pts:{Thriller:2,Psychological:2} },
+    { label:'😭 Emotional & touching', pts:{Drama:3} },
+    { label:'🤷 Doesn\u2019t matter', pts:{} },
+  ]},
+  { id:'setting', q:'Pick a setting that appeals to you', opts:[
+    { label:'🏫 School life', pts:{'Slice of Life':2,Comedy:1} },
+    { label:'🧙 Fantasy world', pts:{Fantasy:3} },
+    { label:'🚀 Space / future', pts:{'Sci-Fi':3} },
+    { label:'🏙️ Real modern world', pts:{'Slice of Life':2,Drama:1} },
+  ]},
+  { id:'action', q:'How much action do you want?', opts:[
+    { label:'💥 Nonstop action', pts:{Action:3,Adventure:1} },
+    { label:'⚔️ Some is fine', pts:{Action:1} },
+    { label:'🍃 Not really, more chill', pts:{'Slice of Life':2} },
+  ]},
+  { id:'romance', q:'Interested in romance?', opts:[
+    { label:'💗 Yes, love it', pts:{Romance:3} },
+    { label:'😌 A little is fine', pts:{Romance:1} },
+    { label:'🚫 Not really', pts:{} },
+  ], skip:a => a.mood==='dark' },
+  { id:'comedy', q:'How funny should it be?', opts:[
+    { label:'🤣 Comedy focused', pts:{Comedy:3} },
+    { label:'😊 Some jokes are nice', pts:{Comedy:1} },
+    { label:'🎭 Keep it serious', pts:{Drama:1} },
+  ], skip:a => a.mood==='dark' },
+  { id:'mecha', q:'Robots and mecha?', opts:[
+    { label:'🤖 Heck yes', pts:{Mecha:3,'Sci-Fi':1} },
+    { label:'🙅 Not my thing', pts:{} },
+  ], skip:a => a.setting==='school' },
+  { id:'supernatural', q:'Supernatural powers / spirits?', opts:[
+    { label:'🌙 Love that stuff', pts:{Supernatural:3} },
+    { label:'🙂 Sure, why not', pts:{Supernatural:1} },
+    { label:'❌ Prefer realistic', pts:{} },
+  ]},
+  { id:'mystery', q:'Mysteries and puzzles?', opts:[
+    { label:'🔍 Yes, keep me guessing', pts:{Mystery:3} },
+    { label:'😐 Not a priority', pts:{} },
+  ]},
+  { id:'horror', q:'How about horror / suspense?', opts:[
+    { label:'😱 Bring it on', pts:{Horror:3,Thriller:1} },
+    { label:'😬 A little tension is ok', pts:{Thriller:1} },
+    { label:'🚫 No thanks', pts:{} },
+  ], skip:a => a.mood==='light' },
+  { id:'sports', q:'Sports and competition?', opts:[
+    { label:'⚽ I\u2019m in', pts:{Sports:3} },
+    { label:'🙅 Not interested', pts:{} },
+  ]},
+  { id:'music', q:'Music / performance focused stories?', opts:[
+    { label:'🎵 Yes please', pts:{Music:3} },
+    { label:'🙂 Doesn\u2019t matter', pts:{} },
+  ]},
+  { id:'psych', q:'Do you like mind-bending, psychological stuff?', opts:[
+    { label:'🧠 Absolutely', pts:{Psychological:3} },
+    { label:'😐 Not a must', pts:{} },
+  ], skip:a => a.mood==='light' },
+  { id:'magic', q:'Magical girls / whimsical magic?', opts:[
+    { label:'✨ Love it', pts:{'Mahou Shoujo':3} },
+    { label:'❌ Not for me', pts:{} },
+  ]},
+  { id:'adventure', q:'Big journeys and exploration?', opts:[
+    { label:'🗺️ Yes, take me somewhere new', pts:{Adventure:3} },
+    { label:'🏠 Prefer grounded stories', pts:{} },
+  ]},
+  { id:'length', q:'How long a commitment do you want?', opts:[
+    { label:'⏱️ Short & sweet (movies/OVAs ok)', meta:{maxEpisodes:13} },
+    { label:'📺 A normal season (~12-26 eps)', meta:{maxEpisodes:26} },
+    { label:'📚 I don\u2019t mind long-runners', meta:{} },
+  ]},
+  { id:'priority', q:'What matters more?', opts:[
+    { label:'🔥 What\u2019s popular right now', meta:{sort:'POPULARITY_DESC'} },
+    { label:'⭐ Highest rated, popularity aside', meta:{sort:'SCORE_DESC'} },
+  ]},
+  { id:'format', q:'Any format preference?', opts:[
+    { label:'📺 TV series', meta:{format:'TV'} },
+    { label:'🎬 Movies', meta:{format:'MOVIE'} },
+    { label:'🤷 No preference', meta:{} },
+  ]},
+  { id:'quality', q:'Only show well-reviewed picks?', opts:[
+    { label:'✅ Yes, 75%+ rated only', meta:{minScore:75} },
+    { label:'🙂 Show me everything', meta:{} },
+  ]},
+];
+function quizVisibleQuestions(answers){
+  return QUIZ_POOL.filter(q => !q.skip || !q.skip(answers));
+}
+function renderQuiz(){
+  const qz = state.quiz;
+  if (qz.done) {
+    return `
+      <div class="backbar"><button class="iconbtn" data-action="quizRestart">↺</button><span class="chip" style="background:var(--accent);color:#0a0a0a;">Your matches</span></div>
+      ${qz.loading ? spinnerHtml() : (qz.results.length ? `<div class="grid">${gridHtml(qz.results)}</div>` : `<div class="empty">Nothing matched — try different answers.</div>`)}
+    `;
+  }
+  const visible = quizVisibleQuestions(qz.answers);
+  const q = visible[qz.step];
+  if (!q) { finishQuiz(); return spinnerHtml(); }
+  return `
+    <div style="padding:18px 16px 6px;">
+      <div class="section-title" style="margin:0 0 4px;">Question ${qz.step+1} of ~${visible.length}</div>
+      <div style="height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin-bottom:18px;">
+        <div style="height:100%;width:${Math.round(((qz.step)/visible.length)*100)}%;background:var(--accent);"></div>
+      </div>
+      <h2 style="font-size:18px;margin:0 0 16px;">${esc(q.q)}</h2>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        ${q.opts.map((o,i) => `<button class="btn ghost" style="text-align:left;padding:14px 16px;font-size:14px;" data-action="quizAnswer" data-qid="${q.id}" data-oidx="${i}">${esc(o.label)}</button>`).join('')}
+      </div>
+    </div>
+  `;
+}
+function quizAnswer(qid, optIdx){
+  const qz = state.quiz;
+  const q = QUIZ_POOL.find(x => x.id === qid);
+  const opt = q.opts[optIdx];
+  qz.answers[qid] = { optIdx, ...opt };
+  qz.step++;
+  const visible = quizVisibleQuestions(qz.answers);
+  if (qz.step >= visible.length) finishQuiz(); else render();
+}
+async function finishQuiz(){
+  const qz = state.quiz;
+  qz.done = true; qz.loading = true; render();
+  const scores = {};
+  let maxEpisodes = null, sort = 'POPULARITY_DESC', format = null, minScore = null;
+  Object.values(qz.answers).forEach(a => {
+    if (a.pts) Object.entries(a.pts).forEach(([g,w]) => { scores[g] = (scores[g]||0) + w; });
+    if (a.meta) {
+      if (a.meta.maxEpisodes) maxEpisodes = a.meta.maxEpisodes;
+      if (a.meta.sort) sort = a.meta.sort;
+      if (a.meta.format) format = a.meta.format;
+      if (a.meta.minScore) minScore = a.meta.minScore;
+    }
+  });
+  const topGenres = Object.entries(scores).sort((a,b) => b[1]-a[1]).slice(0,4).map(x=>x[0]);
+  try {
+    const query = `query($genres:[String],$perPage:Int,$sort:[MediaSort],$format:MediaFormat,$minScore:Int,$maxEp:Int){
+      Page(page:1, perPage:$perPage){
+        media(genre_in:$genres, sort:$sort, type:ANIME, isAdult:false, format:$format, averageScore_greater:$minScore, episodes_lesser:$maxEp){ ${MEDIA_FIELDS} }
+      }
+    }`;
+    const data = await alQuery(query, {
+      genres: topGenres.length ? topGenres : undefined,
+      perPage: 24, sort: [sort], format: format || undefined,
+      minScore: minScore || undefined, maxEp: maxEpisodes ? maxEpisodes + 1 : undefined,
+    });
+    qz.results = data.Page.media;
+  } catch(e) { qz.results = []; }
+  qz.loading = false; render();
 }
 
 /* ============================== MY LIST ============================== */
@@ -872,19 +1108,24 @@ function openSeriesModal(m){
 }
 async function loadSeriesChain(rootId, root){
   const chain = [root];
+  const movies = [];
+  const seenMovieIds = new Set();
   try {
     let current = root;
     for (let i=0; i<12; i++){
       const data = await alQuery(SEASON_WALK_QUERY, { id: current.id });
       const edges = data.Media?.relations?.edges || [];
-      const next = edges.find(e => e.relationType==='SEQUEL' && (e.node.format==='TV'||e.node.format==='TV_SHORT'));
+      edges.filter(e => SEASON_RELATION_TYPES.includes(e.relationType) && e.node.format === 'MOVIE').forEach(e => {
+        if (!seenMovieIds.has(e.node.id)) { seenMovieIds.add(e.node.id); movies.push(e.node); }
+      });
+      const next = edges.find(e => SEASON_RELATION_TYPES.includes(e.relationType) && (e.node.format==='TV'||e.node.format==='TV_SHORT'));
       if (!next) break;
       current = next.node;
       chain.push(current);
     }
   } catch(e){ /* show whatever we found so far */ }
   const c = state.modalStack.find(x => x.type==='series' && x.data.id===rootId);
-  if (c) { c.seasons = chain; c.loading = false; render(); }
+  if (c) { c.seasons = chain; c.movies = movies; c.loading = false; render(); }
 }
 function popModal(){ state.modalStack.pop(); render(); }
 function closeAllModals(){ state.modalStack = []; render(); }
@@ -901,7 +1142,7 @@ function renderModal(){
   else inner = renderPersonModal(c);
   host.innerHTML = `
     <div class="modal-wrap" data-action="closeModalBg">
-      <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal">
         ${backBtn}
         <button class="close" data-action="closeModal">✕</button>
         ${inner}
@@ -926,8 +1167,8 @@ function renderAnimeModal(c){
       <div class="genretags">${(m.genres||[]).map(g=>`<span class="genretag" style="background:${colorFor(g)}">${esc(g)}</span>`).join('')}</div>
       <div class="meta">
         ${m.averageScore ? `<span>★ ${m.averageScore}%</span>` : ''}
-        ${m.episodes ? `<span>${m.episodes} eps</span>` : ''}
-        ${m.seasonYear ? `<span>${m.season?m.season+' ':''}${m.seasonYear}</span>` : ''}
+        ${(m.episodes && m.format !== 'MOVIE') ? `<span>${m.episodes} eps</span>` : ''}
+        ${formatDate(m.startDate) ? `<span>${formatDate(m.startDate)}</span>` : (m.seasonYear ? `<span>${m.season?m.season+' ':''}${m.seasonYear}</span>` : '')}
       </div>
       <div class="synopsis">${esc(stripHtml(m.description))}</div>
       ${watchUrl ? `<a class="extlink" href="${watchUrl}" target="_blank" rel="noopener">↗ Open trailer on ${m.trailer.site==='youtube'?'YouTube':'Dailymotion'}</a>` : ''}
@@ -1063,10 +1304,13 @@ function scoreRowHtml(entry){
 }
 function renderSeriesModal(c){
   const seasons = c.seasons || [c.data];
+  const movies = c.movies || [];
+  let sub = c.loading ? 'Finding seasons…' : `${seasons.length} season${seasons.length>1?'s':''}`;
+  if (!c.loading && movies.length) sub += ` · ${movies.length} movie${movies.length>1?'s':''}`;
   return `
     <div class="hero">
       <img src="${c.data.coverImage?.large||''}" alt="">
-      <div><h2>${esc(titleOf(c.data))}</h2><div class="sub">${c.loading ? 'Finding seasons…' : `${seasons.length} season${seasons.length>1?'s':''}`}</div></div>
+      <div><h2>${esc(titleOf(c.data))}</h2><div class="sub">${sub}</div></div>
     </div>
     <div class="modal-body" style="padding-top:0;">
       <div class="list-heading">Seasons</div>
@@ -1074,12 +1318,25 @@ function renderSeriesModal(c){
         <button class="season-row" data-action="openMedia" data-mediajson='${esc(JSON.stringify(s))}'>
           <img src="${s.coverImage?.large||''}" alt="">
           <div class="season-info">
-            <div class="season-title">Season ${i+1}${s.seasonYear?` · ${s.seasonYear}`:''}</div>
+            <div class="season-title">Season ${i+1}${formatDate(s.startDate)?` · ${formatDate(s.startDate)}`:(s.seasonYear?` · ${s.seasonYear}`:'')}</div>
             <div class="season-sub">${esc(titleOf(s))}${s.episodes?` · ${s.episodes} eps`:''}</div>
           </div>
           ${s.averageScore ? `<span class="review-score">${s.averageScore}%</span>` : ''}
         </button>
       `).join('')}
+      ${movies.length ? `
+        <div class="list-heading" style="margin-top:14px;">Movies</div>
+        ${movies.map(s => `
+          <button class="season-row" data-action="openMedia" data-mediajson='${esc(JSON.stringify(s))}'>
+            <img src="${s.coverImage?.large||''}" alt="">
+            <div class="season-info">
+              <div class="season-title">🎬 ${formatDate(s.startDate) || s.seasonYear || ''}</div>
+              <div class="season-sub">${esc(titleOf(s))}</div>
+            </div>
+            ${s.averageScore ? `<span class="review-score">${s.averageScore}%</span>` : ''}
+          </button>
+        `).join('')}
+      ` : ''}
       ${c.loading ? spinnerHtml() : ''}
     </div>
   `;
@@ -1223,10 +1480,11 @@ document.addEventListener('click', async (ev) => {
   }
 
   else if (action === 'pickSwipeGenre') {
-    state.swipe = { genre: t.dataset.genre, queue:[], idx:0, playing:false, loading:false, error:null, seenPages:new Set() };
+    state.swipe = { genre: t.dataset.genre, mode: state.swipe.mode, queue:[], idx:0, page:1, playing:false, loading:false, error:null, seenPages:new Set() };
     render(); fetchSwipeMore(t.dataset.genre);
   }
-  else if (action === 'backSwipe') { state.swipe = { genre:null, queue:[], idx:0, playing:false, loading:false, error:null, seenPages:new Set() }; render(); }
+  else if (action === 'backSwipe') { state.swipe = { genre:null, mode: state.swipe.mode, queue:[], idx:0, page:1, playing:false, loading:false, error:null, seenPages:new Set() }; render(); }
+  else if (action === 'setDiscoverMode') { state.swipe.mode = t.dataset.mode; render(); }
   else if (action === 'playSwipe') { state.swipe.playing = true; render(); }
   else if (action === 'swipeSkip') { advanceSwipe(); }
   else if (action === 'swipeLike') { const c = state.swipe.queue[state.swipe.idx]; if (c) await doLike(c); advanceSwipe(); }
@@ -1239,6 +1497,8 @@ document.addEventListener('click', async (ev) => {
   }
 
   else if (action === 'myTab') { state.mylist.tab = t.dataset.key; render(); }
+  else if (action === 'quizAnswer') { quizAnswer(t.dataset.qid, Number(t.dataset.oidx)); }
+  else if (action === 'quizRestart') { state.quiz = { step:0, answers:{}, done:false, loading:false, results:[] }; render(); }
 
   else if (action === 'connectAL') {
     const cid = document.getElementById('alCidInput').value.trim();
