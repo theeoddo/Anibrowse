@@ -662,7 +662,7 @@ function cardHtml(m){
 function seriesCardHtml(m, seasonCount, movieCount){
   let label = `📺 ${seasonCount} season${seasonCount>1?'s':''}`;
   if (movieCount>0) label += ` · 🎬 ${movieCount} movie${movieCount>1?'s':''}`;
-  return `<div class="card" data-action="openSeries" data-mediajson='${esc(JSON.stringify(m))}'>
+  return `<div class="card" data-action="openSeries" data-series-id="${m.id}" data-mediajson='${esc(JSON.stringify(m))}'>
     <div class="thumb" style="background:${m.coverImage?.color||'#222'}">
       <img src="${m.coverImage?.large||''}" loading="lazy" alt="">
       ${m.averageScore ? `<span class="badge score">${m.averageScore}%</span>` : ''}
@@ -691,7 +691,10 @@ function gridHtml(items){
     if (m.format === 'TV' || m.format === 'TV_SHORT') {
       const { prequel, sequelLike, movieLike } = franchiseEdges(m);
       if (prequel) return ''; // a later season — reachable through its first season's series page instead
-      return seriesCardHtml(m, 1 + sequelLike.length, movieLike.length);
+      const cached = franchiseCache.get(m.id);
+      if (cached) return seriesCardHtml(m, cached.seasons.length, cached.movies.length);
+      ensureFranchiseCount(m); // one-hop relations undercount 3+ season chains — walk the real chain in the background
+      return seriesCardHtml(m, 1 + sequelLike.length, movieLike.length); // accurate-so-far placeholder meanwhile
     }
     return cardHtml(m);
   }).join('');
@@ -1145,26 +1148,50 @@ function openSeriesModal(m){
   render();
   loadSeriesChain(m.id, m);
 }
-async function loadSeriesChain(rootId, root){
+const franchiseCache = new Map(); // rootId -> { seasons:[...], movies:[...] } (accurate, full chain)
+const franchisePending = new Set();
+async function walkFranchise(root){
   const chain = [root];
   const movies = [];
   const seenMovieIds = new Set();
-  try {
-    let current = root;
-    for (let i=0; i<12; i++){
-      const data = await alQuery(SEASON_WALK_QUERY, { id: current.id });
-      const edges = data.Media?.relations?.edges || [];
-      edges.filter(e => SEASON_RELATION_TYPES.includes(e.relationType) && e.node.format === 'MOVIE').forEach(e => {
-        if (!seenMovieIds.has(e.node.id)) { seenMovieIds.add(e.node.id); movies.push(e.node); }
-      });
-      const next = edges.find(e => SEASON_RELATION_TYPES.includes(e.relationType) && (e.node.format==='TV'||e.node.format==='TV_SHORT'));
-      if (!next) break;
-      current = next.node;
-      chain.push(current);
+  let current = root;
+  for (let i=0; i<12; i++){
+    const data = await alQuery(SEASON_WALK_QUERY, { id: current.id });
+    const edges = data.Media?.relations?.edges || [];
+    edges.filter(e => SEASON_RELATION_TYPES.includes(e.relationType) && e.node.format === 'MOVIE').forEach(e => {
+      if (!seenMovieIds.has(e.node.id)) { seenMovieIds.add(e.node.id); movies.push(e.node); }
+    });
+    const next = edges.find(e => SEASON_RELATION_TYPES.includes(e.relationType) && (e.node.format==='TV'||e.node.format==='TV_SHORT'));
+    if (!next) break;
+    current = next.node;
+    chain.push(current);
+  }
+  return { seasons: chain, movies };
+}
+// Grid cards show an approximate count instantly (from one-hop relations already in hand), then
+// silently walk the real chain in the background and patch just that card's label in place —
+// no full re-render, so it never resets your scroll position while browsing.
+function ensureFranchiseCount(root){
+  if (franchiseCache.has(root.id) || franchisePending.has(root.id)) return;
+  franchisePending.add(root.id);
+  walkFranchise(root).then(result => {
+    franchiseCache.set(root.id, result);
+    franchisePending.delete(root.id);
+    const el = document.querySelector(`.card[data-series-id="${root.id}"] .formattag`);
+    if (el) {
+      let label = `📺 ${result.seasons.length} season${result.seasons.length>1?'s':''}`;
+      if (result.movies.length) label += ` · 🎬 ${result.movies.length} movie${result.movies.length>1?'s':''}`;
+      el.textContent = label;
     }
-  } catch(e){ /* show whatever we found so far */ }
+  }).catch(() => { franchisePending.delete(root.id); });
+}
+async function loadSeriesChain(rootId, root){
+  let result = franchiseCache.get(rootId);
+  try {
+    if (!result) { result = await walkFranchise(root); franchiseCache.set(rootId, result); }
+  } catch(e){ result = { seasons:[root], movies:[] }; /* show whatever we found so far */ }
   const c = state.modalStack.find(x => x.type==='series' && x.data.id===rootId);
-  if (c) { c.seasons = chain; c.movies = movies; c.loading = false; render(); }
+  if (c) { c.seasons = result.seasons; c.movies = result.movies; c.loading = false; render(); }
 }
 function popModal(){ state.modalStack.pop(); render(); }
 function closeAllModals(){ state.modalStack = []; render(); }
