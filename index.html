@@ -88,7 +88,7 @@
     font-size:clamp(9px,2.3vw,13px); font-weight:800; cursor:pointer;
   }
   nav.tabs button.active{ color:var(--accent); }
-  nav.tabs .navemoji{ font-size:clamp(16px,4.2vw,22px); line-height:1; }
+  nav.tabs button svg{ width:clamp(16px,4.2vw,24px); height:clamp(16px,4.2vw,24px); }
   /* themed scrollbars instead of the browser default */
   ::-webkit-scrollbar{ width:9px; height:9px; }
   ::-webkit-scrollbar-track{ background:var(--bg); }
@@ -295,11 +295,11 @@
   </header>
   <main id="view"></main>
   <nav class="tabs" id="tabs">
-    <button data-tab="browse"><span class="navemoji">📺</span>Browse</button>
-    <button data-tab="swipe"><span class="navemoji">🍿</span>Discover</button>
-    <button data-tab="mylist"><span class="navemoji">💖</span>My List</button>
-    <button data-tab="quiz"><span class="navemoji">🔮</span>Match Me</button>
-    <button data-tab="settings"><span class="navemoji">⚙️</span>Settings</button>
+    <button data-tab="browse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Browse</button>
+    <button data-tab="swipe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>Discover</button>
+    <button data-tab="mylist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>My List</button>
+    <button data-tab="quiz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/><circle cx="12" cy="12" r="3.2"/></svg>Match Me</button>
+    <button data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.7.36 1.51.63 1.51 1z"/></svg>Settings</button>
   </nav>
 </div>
 
@@ -1586,7 +1586,7 @@ document.getElementById('tabs').addEventListener('click', (ev) => {
 (async function init(){
   try {
     const data = await alQuery(`query{ GenreCollection }`, {});
-    state.genres = data.GenreCollection;
+    state.genres = (data.GenreCollection || []).filter(g => g !== 'Hentai');
   } catch(e) {
     state.genresError = 'Could not load categories from AniList: ' + e.message;
   }
