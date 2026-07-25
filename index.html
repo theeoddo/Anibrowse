@@ -88,7 +88,7 @@
     font-size:clamp(9px,2.3vw,13px); font-weight:800; cursor:pointer;
   }
   nav.tabs button.active{ color:var(--accent); }
-  nav.tabs button svg{ width:clamp(16px,4.2vw,24px); height:clamp(16px,4.2vw,24px); }
+  nav.tabs .navemoji{ font-size:clamp(16px,4.2vw,22px); line-height:1; }
   /* themed scrollbars instead of the browser default */
   ::-webkit-scrollbar{ width:9px; height:9px; }
   ::-webkit-scrollbar-track{ background:var(--bg); }
@@ -112,7 +112,7 @@
   .genretile .gname{ font-weight:900; font-size:14.5px; text-shadow:0 1px 6px rgba(0,0,0,.4); position:relative; z-index:1; }
   .grid{
     display:grid; gap:12px; padding:0 16px 24px;
-    grid-template-columns:repeat(auto-fill, minmax(clamp(120px,26vw,160px), 1fr));
+    grid-template-columns:repeat(auto-fill, minmax(var(--grid-min, clamp(120px,26vw,160px)), 1fr));
   }
   .card{
     background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; cursor:pointer;
@@ -190,6 +190,13 @@
   input.customswatch::-webkit-color-swatch-wrapper{ padding:0; border-radius:50%; }
   input.customswatch::-webkit-color-swatch{ border:none; border-radius:50%; }
   .customswatch-label{ font-size:9.5px; font-weight:800; color:var(--sub); }
+  .settings-toggle-row{ display:flex; align-items:center; justify-content:space-between; gap:14px; cursor:pointer; }
+  input.togglecheck{ -webkit-appearance:none; appearance:none; width:42px; height:24px; border-radius:999px; background:var(--bg2);
+    border:1px solid var(--line); position:relative; cursor:pointer; flex-shrink:0; }
+  input.togglecheck::before{ content:''; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%;
+    background:var(--sub); transition:transform .15s, background .15s; }
+  input.togglecheck:checked{ background:color-mix(in srgb, var(--accent) 35%, var(--bg2)); border-color:var(--accent); }
+  input.togglecheck:checked::before{ background:var(--accent); transform:translateX(18px); }
 
   /* Material 3 Expressive: bold, varied, generous corner radii; pill-shaped controls */
   .theme-expressive .card{ border-radius:26px; }
@@ -288,11 +295,11 @@
   </header>
   <main id="view"></main>
   <nav class="tabs" id="tabs">
-    <button data-tab="browse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Browse</button>
-    <button data-tab="swipe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>Discover</button>
-    <button data-tab="mylist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>My List</button>
-    <button data-tab="quiz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 .8 1 1.8v.5h6v-.5c0-1 .4-1.3 1-1.8A7 7 0 0 0 12 2z"/></svg>Match Me</button>
-    <button data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.7.36 1.51.63 1.51 1z"/></svg>Settings</button>
+    <button data-tab="browse"><span class="navemoji">📺</span>Browse</button>
+    <button data-tab="swipe"><span class="navemoji">🍿</span>Discover</button>
+    <button data-tab="mylist"><span class="navemoji">💖</span>My List</button>
+    <button data-tab="quiz"><span class="navemoji">🔮</span>Match Me</button>
+    <button data-tab="settings"><span class="navemoji">⚙️</span>Settings</button>
   </nav>
 </div>
 
@@ -365,6 +372,9 @@ function themeVars(theme){
   const accent = ACCENTS[theme.family] || PASTELS[theme.family] || ACCENTS.orange;
   return { ...base, accent };
 }
+function applyGridDensity(density){
+  document.documentElement.style.setProperty('--grid-min', density === 'compact' ? '95px' : 'clamp(120px,26vw,160px)');
+}
 function applyTheme(theme){
   const v = themeVars(theme);
   const root = document.documentElement.style;
@@ -383,6 +393,7 @@ function applyTheme(theme){
 }
 
 let state = {
+  settings: LS.get('app_settings', { autoplayTrailer: false, gridDensity: 'comfortable' }),
   tab: 'browse',
   genres: [],
   genresError: null,
@@ -396,9 +407,11 @@ let state = {
   theme: LS.get('theme', { family: 'orange', mode: 'dark' }),
 };
 applyTheme(state.theme);
+applyGridDensity(state.settings.gridDensity);
 function curModal(){ return state.modalStack[state.modalStack.length-1] || null; }
 
 function persistPrefs(){ LS.set('local_prefs', state.local); }
+function saveSettings(){ LS.set('app_settings', state.settings); }
 
 /* ============================== ANILIST ============================== */
 const AL_GQL = 'https://graphql.anilist.co';
@@ -1003,8 +1016,9 @@ function renderSettings(){
   const alCid = LS.get('al_client_id', '');
   return `
     <div class="settings">
+      <div class="section-title" style="margin:0 0 10px;">Account</div>
       <div class="card-box">
-        <div style="font-weight:800;margin-bottom:6px;">AniList account</div>
+        <div style="font-weight:800;margin-bottom:6px;">AniList</div>
         <div class="field">
           <label>AniList Client ID</label>
           <input id="alCidInput" value="${esc(alCid)}" placeholder="e.g. 12345">
@@ -1016,8 +1030,7 @@ function renderSettings(){
         ` : `<button class="btn primary" data-action="connectAL">Connect AniList</button>`}
       </div>
 
-      <div class="divider"></div>
-
+      <div class="section-title" style="margin:22px 0 10px;">Appearance</div>
       <div class="card-box">
         <div style="font-weight:800;margin-bottom:2px;">Theme</div>
         <div style="font-size:11.5px;color:var(--sub);margin-bottom:12px;">Current: <b style="color:var(--text);">${themeLabel(state.theme)}</b></div>
@@ -1060,11 +1073,37 @@ function renderSettings(){
           </div>
         </div>
         <div style="font-size:11px;color:var(--sub);margin-top:6px;">Tap a dot to open the color picker — picking a color switches to and applies that theme.</div>
+
+        <div class="divider"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <span style="font-size:13px;font-weight:700;">Card size</span>
+        </div>
+        <div class="mode-toggle">
+          <button class="modebtn ${state.settings.gridDensity==='comfortable'?'on':''}" data-action="setDensity" data-density="comfortable">▤ Comfortable</button>
+          <button class="modebtn ${state.settings.gridDensity==='compact'?'on':''}" data-action="setDensity" data-density="compact">▦ Compact</button>
+        </div>
       </div>
 
-      <div class="divider"></div>
-      <div style="font-size:11.5px;color:var(--sub);line-height:1.6;">
-        "Liked" is stored only in this browser (AniList has no public "like" concept of its own — liking here also favourites the anime on AniList if connected). Status, episode progress, and score changes save straight to your real AniList list. Cast/staff show the credited Japanese voice actors where AniList has them.
+      <div class="section-title" style="margin:22px 0 10px;">Playback</div>
+      <div class="card-box">
+        <label class="settings-toggle-row">
+          <span>
+            <span style="font-weight:700;font-size:13px;display:block;">Autoplay trailers</span>
+            <span style="font-size:11.5px;color:var(--sub);">Start playing automatically when you open an anime, instead of tapping Play</span>
+          </span>
+          <input type="checkbox" class="togglecheck" data-action="toggleAutoplay" ${state.settings.autoplayTrailer?'checked':''}>
+        </label>
+      </div>
+
+      <div class="section-title" style="margin:22px 0 10px;">Data</div>
+      <div class="card-box">
+        <div style="font-size:12.5px;color:var(--sub);margin-bottom:10px;">Liked titles (${state.local.liked.length}) are stored only in this browser.</div>
+        <button class="btn ghost" data-action="resetLiked">Clear liked list</button>
+      </div>
+
+      <div class="section-title" style="margin:22px 0 10px;">About</div>
+      <div class="card-box" style="font-size:11.5px;color:var(--sub);line-height:1.6;">
+        AniBrowse pulls titles, images, trailers, cast/crew, and reviews live from <a href="https://anilist.co" target="_blank" rel="noopener" style="color:var(--accent);">AniList</a>'s public API. "Liked" is stored only in this browser (AniList has no public "like" concept — liking here also favourites the anime on AniList if connected). Status, episode progress, and score changes save straight to your real AniList list. Cast/staff show the credited Japanese voice actors where AniList has them.
       </div>
     </div>
   `;
@@ -1159,8 +1198,12 @@ function renderAnimeModal(c){
 
   return `
     <div class="video-wrap" id="videoWrap">
-      <img class="bg" src="${m.coverImage?.large||''}">
-      ${embed ? `<button class="playbtn" data-action="playModal" style="position:relative;">▶ Play trailer</button>` : `<span style="position:relative;color:#8b93a7;background:rgba(0,0,0,.6);padding:8px 12px;border-radius:8px;font-size:12px;">No trailer available</span>`}
+      ${state.settings.autoplayTrailer && embed ? `
+        <iframe src="${embed}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+      ` : `
+        <img class="bg" src="${m.coverImage?.large||''}">
+        ${embed ? `<button class="playbtn" data-action="playModal" style="position:relative;">▶ Play trailer</button>` : `<span style="position:relative;color:#8b93a7;background:rgba(0,0,0,.6);padding:8px 12px;border-radius:8px;font-size:12px;">No trailer available</span>`}
+      `}
     </div>
     <div class="modal-body">
       <h2>${esc(titleOf(m))}</h2>
@@ -1507,6 +1550,9 @@ document.addEventListener('click', async (ev) => {
     location.href = alAuthUrl(cid);
   }
   else if (action === 'disconnectAL') { state.anilist = null; LS.set('al_auth', null); state.mylist.byStatus = { CURRENT:[], PLANNING:[], COMPLETED:[], PAUSED:[], DROPPED:[], REPEATING:[] }; myListLoaded=false; render(); }
+  else if (action === 'setDensity') { state.settings.gridDensity = t.dataset.density; applyGridDensity(state.settings.gridDensity); saveSettings(); render(); }
+  else if (action === 'resetLiked') { state.local.liked = []; persistPrefs(); render(); }
+  else if (action === 'toggleAutoplay') { state.settings.autoplayTrailer = t.checked; saveSettings(); render(); }
 
   else if (action === 'setMode') { applyTheme({ family: (CATPPUCCIN[state.theme.family] ? 'orange' : state.theme.family), mode: t.dataset.mode }); render(); }
   else if (action === 'setFamily') { applyTheme({ family: t.dataset.family, mode: state.theme.mode === 'light' ? 'light' : 'dark' }); render(); }
