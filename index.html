@@ -69,6 +69,10 @@
     background-size:200% auto; animation:hue 6s linear infinite;
   }
   @keyframes hue{ to{ background-position:200% center; } }
+  .reduce-motion .logo span.g{ animation:none; }
+  .reduce-motion .card{ transition:none; }
+  .reduce-motion .card:hover{ transform:none; }
+  .reduce-motion .chip:active, .reduce-motion .genretile:active{ transform:none; }
   .acct{ display:flex; gap:6px; align-items:center; font-size:11px; color:var(--sub); }
   .pill{
     display:inline-flex; align-items:center; gap:5px; padding:5px 10px; border-radius:999px;
@@ -240,10 +244,11 @@
   .score-row{ display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
   .score-row input[type=number]{ width:70px; padding:7px 9px; border-radius:8px; border:1px solid var(--line); background:var(--bg2); color:var(--text); font-size:13px; }
   .score-stars{ display:flex; gap:4px; }
-  .score-stars button, .score-smiley button{ background:none; border:none; font-size:20px; cursor:pointer; opacity:.35; color:var(--sub); }
-  .score-stars button.on{ color:var(--yellow); }
-  .score-smiley button.on{ opacity:1; }
-  .score-stars button.on, .score-smiley button.on{ opacity:1; }
+  .score-stars button{ background:none; border:none; font-size:20px; cursor:pointer; opacity:.35; color:var(--sub); }
+  .score-stars button.on{ color:var(--yellow); opacity:1; }
+  .score-smiley button{ background:var(--bg2); border:1px solid var(--line); border-radius:999px; padding:6px 12px;
+    font-size:11.5px; font-weight:800; cursor:pointer; color:var(--sub); }
+  .score-smiley button.on{ color:#0a0a0a; border-color:transparent; background:var(--accent); }
   .removebtn{ font-size:11.5px; color:var(--red); background:none; border:none; cursor:pointer; font-weight:700; padding:0; }
 
   /* cast / staff */
@@ -375,6 +380,9 @@ function themeVars(theme){
 function applyGridDensity(density){
   document.documentElement.style.setProperty('--grid-min', density === 'compact' ? '95px' : 'clamp(120px,26vw,160px)');
 }
+function applyReduceMotion(on){
+  document.documentElement.classList.toggle('reduce-motion', !!on);
+}
 function applyTheme(theme){
   const v = themeVars(theme);
   const root = document.documentElement.style;
@@ -393,21 +401,26 @@ function applyTheme(theme){
 }
 
 let state = {
-  settings: LS.get('app_settings', { autoplayTrailer: false, gridDensity: 'comfortable' }),
+  settings: LS.get('app_settings', {
+    autoplayTrailer: false, gridDensity: 'comfortable', showScores: true, openTrailerNewTab: false,
+    reduceMotion: false, defaultDiscoverMode: 'random', hideMoviesInBrowse: false,
+    minScoreFilter: 0, autoCompleteOnLastEp: true, defaultMyListTab: 'CURRENT',
+  }),
   tab: 'browse',
   genres: [],
   genresError: null,
   anilist: LS.get('al_auth', null),   // {token, user:{id,name,avatar}, scoreFormat}
   local: LS.get('local_prefs', { liked: [] }), // local-only likes, keyed by anilist id
   browse: { mode: 'pick', genre: null, search: '', items: [], page: 1, hasNext: true, loading: false, error: null },
-  swipe:  { genre: null, mode: 'random', queue: [], idx: 0, page: 1, playing: false, loading: false, error: null, seenPages: new Set() },
-  mylist: { tab: 'CURRENT', byStatus: { CURRENT:[], PLANNING:[], COMPLETED:[], PAUSED:[], DROPPED:[], REPEATING:[] }, loading: false, error: null },
+  swipe:  { genre: null, mode: LS.get('app_settings',{}).defaultDiscoverMode || 'random', queue: [], idx: 0, page: 1, playing: false, loading: false, error: null, seenPages: new Set() },
+  mylist: { tab: LS.get('app_settings',{}).defaultMyListTab || 'CURRENT', byStatus: { CURRENT:[], PLANNING:[], COMPLETED:[], PAUSED:[], DROPPED:[], REPEATING:[] }, loading: false, error: null },
   modalStack: [], // [{type:'anime'|'studio'|'person', data, detail, entry, loading}]
   quiz: { step:0, answers:{}, done:false, loading:false, results:[] },
   theme: LS.get('theme', { family: 'orange', mode: 'dark' }),
 };
 applyTheme(state.theme);
 applyGridDensity(state.settings.gridDensity);
+applyReduceMotion(state.settings.reduceMotion);
 function curModal(){ return state.modalStack[state.modalStack.length-1] || null; }
 
 function persistPrefs(){ LS.set('local_prefs', state.local); }
@@ -624,16 +637,10 @@ function spinnerHtml(){
     <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="#8b93a7" stroke-width="2"><circle cx="12" cy="12" r="9" stroke-dasharray="42" stroke-dashoffset="14"/></svg>
   </div>`;
 }
-const GENRE_EMOJI = {
-  Action:'⚔️', Adventure:'🗺️', Comedy:'😂', Drama:'🎭', Ecchi:'💦', Fantasy:'🧙', Hentai:'🔞',
-  Horror:'👻', 'Mahou Shoujo':'✨', Mecha:'🤖', Music:'🎵', Mystery:'🔍', Psychological:'🧠',
-  Romance:'💗', 'Sci-Fi':'🚀', 'Slice of Life':'🍃', Sports:'⚽', Supernatural:'🌙', Thriller:'🔪',
-};
 function chipsHtml(title, action){
   return `<div class="section-title">${title}</div>
   <div class="chips">${state.genres.map(g => `
     <button class="genretile" style="background:linear-gradient(155deg, ${colorFor(g)}, color-mix(in srgb, ${colorFor(g)} 55%, black))" data-action="${action}" data-genre="${esc(g)}">
-      <span class="emoji">${GENRE_EMOJI[g] || '🎬'}</span>
       <span class="gname">${esc(g)}</span>
     </button>
   `).join('')}</div>`;
@@ -644,28 +651,28 @@ function statusOf(id){
   for (const k in state.mylist.byStatus) { if (state.mylist.byStatus[k].some(x=>x.id===id)) return k; }
   return null;
 }
-const FORMAT_TAGS = { MOVIE:'🎬 Movie', OVA:'📀 OVA', ONA:'📀 ONA', SPECIAL:'✨ Special', TV_SHORT:'📺 TV Short', MUSIC:'🎵 Music' };
+const FORMAT_TAGS = { MOVIE:'Movie', OVA:'OVA', ONA:'ONA', SPECIAL:'Special', TV_SHORT:'TV Short', MUSIC:'Music' };
 function cardHtml(m){
   const st = statusOf(m.id);
   const tag = FORMAT_TAGS[m.format];
   return `<div class="card" data-action="openMedia" data-mediajson='${esc(JSON.stringify(m))}'>
     <div class="thumb" style="background:${m.coverImage?.color||'#222'}">
       <img src="${m.coverImage?.large||''}" loading="lazy" alt="">
-      ${m.averageScore ? `<span class="badge score">${m.averageScore}%</span>` : ''}
+      ${(m.averageScore && state.settings.showScores) ? `<span class="badge score">${m.averageScore}%</span>` : ''}
       ${st ? `<span class="badge wl" style="color:${STATUS_COLORS[st]}">${STATUS_LABELS[st]}</span>` : ''}
-      ${isLiked(m.id) ? `<span class="badge like">♥</span>` : ''}
+      ${isLiked(m.id) ? `<span class="badge like"><svg viewBox="0 0 24 24" fill="currentColor" style="width:11px;height:11px;"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg></span>` : ''}
     </div>
     <div class="title">${esc(titleOf(m))}</div>
     ${tag ? `<div class="formattag">${tag}</div>` : ''}
   </div>`;
 }
 function seriesCardHtml(m, seasonCount, movieCount){
-  let label = `📺 ${seasonCount} season${seasonCount>1?'s':''}`;
-  if (movieCount>0) label += ` · 🎬 ${movieCount} movie${movieCount>1?'s':''}`;
+  let label = `${seasonCount} season${seasonCount>1?'s':''}`;
+  if (movieCount>0) label += ` · ${movieCount} movie${movieCount>1?'s':''}`;
   return `<div class="card" data-action="openSeries" data-series-id="${m.id}" data-mediajson='${esc(JSON.stringify(m))}'>
     <div class="thumb" style="background:${m.coverImage?.color||'#222'}">
       <img src="${m.coverImage?.large||''}" loading="lazy" alt="">
-      ${m.averageScore ? `<span class="badge score">${m.averageScore}%</span>` : ''}
+      ${(m.averageScore && state.settings.showScores) ? `<span class="badge score">${m.averageScore}%</span>` : ''}
     </div>
     <div class="title">${esc(titleOf(m))}</div>
     <div class="formattag" style="color:var(--accent);">${label}</div>
@@ -688,6 +695,8 @@ function franchiseEdges(m){
 }
 function gridHtml(items){
   return items.map(m => {
+    if (state.settings.minScoreFilter && m.averageScore && m.averageScore < state.settings.minScoreFilter) return '';
+    if (m.format === 'MOVIE' && state.settings.hideMoviesInBrowse) return '';
     if (m.format === 'TV' || m.format === 'TV_SHORT') {
       const { prequel, sequelLike, movieLike } = franchiseEdges(m);
       if (prequel) return ''; // a later season — reachable through its first season's series page instead
@@ -769,8 +778,8 @@ function renderSwipe(){
   const s = state.swipe;
   if (!s.genre) {
     const modeBar = `<div class="mode-toggle" style="margin:12px 16px 4px;">
-      <button class="modebtn ${s.mode!=='random'?'on':''}" data-action="setDiscoverMode" data-mode="popular">🔥 Popular</button>
-      <button class="modebtn ${s.mode==='random'?'on':''}" data-action="setDiscoverMode" data-mode="random">🎲 Random</button>
+      <button class="modebtn ${s.mode!=='random'?'on':''}" data-action="setDiscoverMode" data-mode="popular">Popular</button>
+      <button class="modebtn ${s.mode==='random'?'on':''}" data-action="setDiscoverMode" data-mode="random">Random</button>
     </div>`;
     return modeBar + chipsHtml(`Discover — choose a category (${s.mode==='random'?'random pick':'most popular first'})`, 'pickSwipeGenre');
   }
@@ -796,9 +805,9 @@ function renderSwipe(){
       </div>
       ${s.error ? `<div class="err">${esc(s.error)}</div>` : ''}
       <div class="swipe-actions">
-        <button class="actionbtn" data-action="swipeSkip">⏭<br>Skip</button>
-        <button class="actionbtn wl" data-action="swipePlan">🔖<br>Plan to Watch</button>
-        <button class="actionbtn like" data-action="swipeLike">♥<br>Like</button>
+        <button class="actionbtn" data-action="swipeSkip">Skip</button>
+        <button class="actionbtn wl" data-action="swipePlan">Plan to Watch</button>
+        <button class="actionbtn like" data-action="swipeLike">Like</button>
       </div>
     </div>
   `;
@@ -833,87 +842,87 @@ async function fetchSwipeMore(genre){
 // would already be implied, so the path adapts instead of being a fixed static list.
 const QUIZ_POOL = [
   { id:'mood', q:'What kind of mood are you in?', opts:[
-    { label:'😄 Light & fun', pts:{Comedy:3,'Slice of Life':1} },
-    { label:'🖤 Dark & intense', pts:{Thriller:2,Psychological:2} },
-    { label:'😭 Emotional & touching', pts:{Drama:3} },
-    { label:'🤷 Doesn\u2019t matter', pts:{} },
+    { label:'Light & fun', pts:{Comedy:3,'Slice of Life':1} },
+    { label:'Dark & intense', pts:{Thriller:2,Psychological:2} },
+    { label:'Emotional & touching', pts:{Drama:3} },
+    { label:'Doesn\u2019t matter', pts:{} },
   ]},
   { id:'setting', q:'Pick a setting that appeals to you', opts:[
-    { label:'🏫 School life', pts:{'Slice of Life':2,Comedy:1} },
-    { label:'🧙 Fantasy world', pts:{Fantasy:3} },
-    { label:'🚀 Space / future', pts:{'Sci-Fi':3} },
-    { label:'🏙️ Real modern world', pts:{'Slice of Life':2,Drama:1} },
+    { label:'School life', pts:{'Slice of Life':2,Comedy:1} },
+    { label:'Fantasy world', pts:{Fantasy:3} },
+    { label:'Space / future', pts:{'Sci-Fi':3} },
+    { label:'Real modern world', pts:{'Slice of Life':2,Drama:1} },
   ]},
   { id:'action', q:'How much action do you want?', opts:[
-    { label:'💥 Nonstop action', pts:{Action:3,Adventure:1} },
-    { label:'⚔️ Some is fine', pts:{Action:1} },
-    { label:'🍃 Not really, more chill', pts:{'Slice of Life':2} },
+    { label:'Nonstop action', pts:{Action:3,Adventure:1} },
+    { label:'Some is fine', pts:{Action:1} },
+    { label:'Not really, more chill', pts:{'Slice of Life':2} },
   ]},
   { id:'romance', q:'Interested in romance?', opts:[
-    { label:'💗 Yes, love it', pts:{Romance:3} },
-    { label:'😌 A little is fine', pts:{Romance:1} },
-    { label:'🚫 Not really', pts:{} },
+    { label:'Yes, love it', pts:{Romance:3} },
+    { label:'A little is fine', pts:{Romance:1} },
+    { label:'Not really', pts:{} },
   ], skip:a => a.mood==='dark' },
   { id:'comedy', q:'How funny should it be?', opts:[
-    { label:'🤣 Comedy focused', pts:{Comedy:3} },
-    { label:'😊 Some jokes are nice', pts:{Comedy:1} },
-    { label:'🎭 Keep it serious', pts:{Drama:1} },
+    { label:'Comedy focused', pts:{Comedy:3} },
+    { label:'Some jokes are nice', pts:{Comedy:1} },
+    { label:'Keep it serious', pts:{Drama:1} },
   ], skip:a => a.mood==='dark' },
   { id:'mecha', q:'Robots and mecha?', opts:[
-    { label:'🤖 Heck yes', pts:{Mecha:3,'Sci-Fi':1} },
-    { label:'🙅 Not my thing', pts:{} },
+    { label:'Heck yes', pts:{Mecha:3,'Sci-Fi':1} },
+    { label:'Not my thing', pts:{} },
   ], skip:a => a.setting==='school' },
   { id:'supernatural', q:'Supernatural powers / spirits?', opts:[
-    { label:'🌙 Love that stuff', pts:{Supernatural:3} },
-    { label:'🙂 Sure, why not', pts:{Supernatural:1} },
-    { label:'❌ Prefer realistic', pts:{} },
+    { label:'Love that stuff', pts:{Supernatural:3} },
+    { label:'Sure, why not', pts:{Supernatural:1} },
+    { label:'Prefer realistic', pts:{} },
   ]},
   { id:'mystery', q:'Mysteries and puzzles?', opts:[
-    { label:'🔍 Yes, keep me guessing', pts:{Mystery:3} },
-    { label:'😐 Not a priority', pts:{} },
+    { label:'Yes, keep me guessing', pts:{Mystery:3} },
+    { label:'Not a priority', pts:{} },
   ]},
   { id:'horror', q:'How about horror / suspense?', opts:[
-    { label:'😱 Bring it on', pts:{Horror:3,Thriller:1} },
-    { label:'😬 A little tension is ok', pts:{Thriller:1} },
-    { label:'🚫 No thanks', pts:{} },
+    { label:'Bring it on', pts:{Horror:3,Thriller:1} },
+    { label:'A little tension is ok', pts:{Thriller:1} },
+    { label:'No thanks', pts:{} },
   ], skip:a => a.mood==='light' },
   { id:'sports', q:'Sports and competition?', opts:[
-    { label:'⚽ I\u2019m in', pts:{Sports:3} },
-    { label:'🙅 Not interested', pts:{} },
+    { label:'I\u2019m in', pts:{Sports:3} },
+    { label:'Not interested', pts:{} },
   ]},
   { id:'music', q:'Music / performance focused stories?', opts:[
-    { label:'🎵 Yes please', pts:{Music:3} },
-    { label:'🙂 Doesn\u2019t matter', pts:{} },
+    { label:'Yes please', pts:{Music:3} },
+    { label:'Doesn\u2019t matter', pts:{} },
   ]},
   { id:'psych', q:'Do you like mind-bending, psychological stuff?', opts:[
-    { label:'🧠 Absolutely', pts:{Psychological:3} },
-    { label:'😐 Not a must', pts:{} },
+    { label:'Absolutely', pts:{Psychological:3} },
+    { label:'Not a must', pts:{} },
   ], skip:a => a.mood==='light' },
   { id:'magic', q:'Magical girls / whimsical magic?', opts:[
-    { label:'✨ Love it', pts:{'Mahou Shoujo':3} },
-    { label:'❌ Not for me', pts:{} },
+    { label:'Love it', pts:{'Mahou Shoujo':3} },
+    { label:'Not for me', pts:{} },
   ]},
   { id:'adventure', q:'Big journeys and exploration?', opts:[
-    { label:'🗺️ Yes, take me somewhere new', pts:{Adventure:3} },
-    { label:'🏠 Prefer grounded stories', pts:{} },
+    { label:'Yes, take me somewhere new', pts:{Adventure:3} },
+    { label:'Prefer grounded stories', pts:{} },
   ]},
   { id:'length', q:'How long a commitment do you want?', opts:[
-    { label:'⏱️ Short & sweet (movies/OVAs ok)', meta:{maxEpisodes:13} },
-    { label:'📺 A normal season (~12-26 eps)', meta:{maxEpisodes:26} },
-    { label:'📚 I don\u2019t mind long-runners', meta:{} },
+    { label:'Short & sweet (movies/OVAs ok)', meta:{maxEpisodes:13} },
+    { label:'A normal season (~12-26 eps)', meta:{maxEpisodes:26} },
+    { label:'I don\u2019t mind long-runners', meta:{} },
   ]},
   { id:'priority', q:'What matters more?', opts:[
-    { label:'🔥 What\u2019s popular right now', meta:{sort:'POPULARITY_DESC'} },
-    { label:'⭐ Highest rated, popularity aside', meta:{sort:'SCORE_DESC'} },
+    { label:'What\u2019s popular right now', meta:{sort:'POPULARITY_DESC'} },
+    { label:'Highest rated, popularity aside', meta:{sort:'SCORE_DESC'} },
   ]},
   { id:'format', q:'Any format preference?', opts:[
-    { label:'📺 TV series', meta:{format:'TV'} },
-    { label:'🎬 Movies', meta:{format:'MOVIE'} },
-    { label:'🤷 No preference', meta:{} },
+    { label:'TV series', meta:{format:'TV'} },
+    { label:'Movies', meta:{format:'MOVIE'} },
+    { label:'No preference', meta:{} },
   ]},
   { id:'quality', q:'Only show well-reviewed picks?', opts:[
-    { label:'✅ Yes, 75%+ rated only', meta:{minScore:75} },
-    { label:'🙂 Show me everything', meta:{} },
+    { label:'Yes, 75%+ rated only', meta:{minScore:75} },
+    { label:'Show me everything', meta:{} },
   ]},
 ];
 function quizVisibleQuestions(answers){
@@ -1039,8 +1048,8 @@ function renderSettings(){
         <div style="font-size:11.5px;color:var(--sub);margin-bottom:12px;">Current: <b style="color:var(--text);">${themeLabel(state.theme)}</b></div>
 
         <div class="mode-toggle">
-          <button class="modebtn ${!isCatppuccin() && state.theme.mode==='dark' ? 'on':''}" data-action="setMode" data-mode="dark">🌙 Dark</button>
-          <button class="modebtn ${!isCatppuccin() && state.theme.mode==='light' ? 'on':''}" data-action="setMode" data-mode="light">☀️ Light</button>
+          <button class="modebtn ${!isCatppuccin() && state.theme.mode==='dark' ? 'on':''}" data-action="setMode" data-mode="dark">Dark</button>
+          <button class="modebtn ${!isCatppuccin() && state.theme.mode==='light' ? 'on':''}" data-action="setMode" data-mode="light">Light</button>
         </div>
 
         <div class="theme-label">Colors</div>
@@ -1089,19 +1098,76 @@ function renderSettings(){
 
       <div class="section-title" style="margin:22px 0 10px;">Playback</div>
       <div class="card-box">
-        <label class="settings-toggle-row">
+        <label class="settings-toggle-row" style="margin-bottom:16px;">
           <span>
             <span style="font-weight:700;font-size:13px;display:block;">Autoplay trailers</span>
             <span style="font-size:11.5px;color:var(--sub);">Start playing automatically when you open an anime, instead of tapping Play</span>
           </span>
           <input type="checkbox" class="togglecheck" data-action="toggleAutoplay" ${state.settings.autoplayTrailer?'checked':''}>
         </label>
+        <label class="settings-toggle-row" style="margin-bottom:16px;">
+          <span>
+            <span style="font-weight:700;font-size:13px;display:block;">Open trailers on YouTube instead</span>
+            <span style="font-size:11.5px;color:var(--sub);">Play button opens the video in a new tab rather than embedding it here</span>
+          </span>
+          <input type="checkbox" class="togglecheck" data-action="toggleNewTab" ${state.settings.openTrailerNewTab?'checked':''}>
+        </label>
+        <label class="settings-toggle-row">
+          <span>
+            <span style="font-weight:700;font-size:13px;display:block;">Reduce motion</span>
+            <span style="font-size:11.5px;color:var(--sub);">Turns off the logo animation and card hover/tap movement</span>
+          </span>
+          <input type="checkbox" class="togglecheck" data-action="toggleReduceMotion" ${state.settings.reduceMotion?'checked':''}>
+        </label>
+      </div>
+
+      <div class="section-title" style="margin:22px 0 10px;">Discovery</div>
+      <div class="card-box">
+        <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Default Discover mode</div>
+        <div class="mode-toggle" style="margin-bottom:16px;">
+          <button class="modebtn ${state.settings.defaultDiscoverMode!=='random'?'on':''}" data-action="setDefaultDiscoverMode" data-mode="popular">Popular</button>
+          <button class="modebtn ${state.settings.defaultDiscoverMode==='random'?'on':''}" data-action="setDefaultDiscoverMode" data-mode="random">Random</button>
+        </div>
+
+        <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Default My List tab</div>
+        <div class="mytabs" style="padding:0 0 16px;">
+          ${MYLIST_TABS.filter(([k])=>k!=='LIKED').map(([k,l]) => `<button class="mytab" data-action="setDefaultMyListTab" data-key="${k}" style="${state.settings.defaultMyListTab===k?`background:${STATUS_COLORS[k]};color:#0a0a0a;border-color:transparent;`:''}">${l}</button>`).join('')}
+        </div>
+
+        <label class="settings-toggle-row" style="margin-bottom:16px;">
+          <span>
+            <span style="font-weight:700;font-size:13px;display:block;">Hide movies while browsing</span>
+            <span style="font-size:11.5px;color:var(--sub);">Only show TV series in Browse — movies still appear inside series pages</span>
+          </span>
+          <input type="checkbox" class="togglecheck" data-action="toggleHideMovies" ${state.settings.hideMoviesInBrowse?'checked':''}>
+        </label>
+
+        <div style="font-weight:700;font-size:13px;margin-bottom:6px;">Minimum score to show</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <input type="number" min="0" max="100" id="minScoreInput" value="${state.settings.minScoreFilter}" style="width:70px;padding:7px 9px;border-radius:8px;border:1px solid var(--line);background:var(--bg2);color:var(--text);font-size:13px;">
+          <span style="font-size:11px;color:var(--sub);">/ 100 · 0 = show everything</span>
+          <button class="btn ghost" style="padding:6px 10px;font-size:11px;" data-action="saveMinScore">Save</button>
+        </div>
+
+        <label class="settings-toggle-row">
+          <span>
+            <span style="font-weight:700;font-size:13px;display:block;">Auto-complete on last episode</span>
+            <span style="font-size:11.5px;color:var(--sub);">Marking the final episode watched also switches status to Completed</span>
+          </span>
+          <input type="checkbox" class="togglecheck" data-action="toggleAutoComplete" ${state.settings.autoCompleteOnLastEp?'checked':''}>
+        </label>
       </div>
 
       <div class="section-title" style="margin:22px 0 10px;">Data</div>
       <div class="card-box">
-        <div style="font-size:12.5px;color:var(--sub);margin-bottom:10px;">Liked titles (${state.local.liked.length}) are stored only in this browser.</div>
-        <button class="btn ghost" data-action="resetLiked">Clear liked list</button>
+        <div style="font-size:12.5px;color:var(--sub);margin-bottom:10px;">Liked titles (${state.local.liked.length}) and all settings are stored only in this browser.</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <button class="btn ghost" data-action="resetLiked">Clear liked list</button>
+          <button class="btn ghost" data-action="exportData">Export data</button>
+          <button class="btn ghost" data-action="importData">Import data</button>
+          <button class="btn ghost" data-action="resetSettings">Reset settings to default</button>
+        </div>
+        <input type="file" id="importFileInput" accept="application/json" style="display:none;">
       </div>
 
       <div class="section-title" style="margin:22px 0 10px;">About</div>
@@ -1151,22 +1217,32 @@ function openSeriesModal(m){
 const franchiseCache = new Map(); // rootId -> { seasons:[...], movies:[...] } (accurate, full chain)
 const franchisePending = new Set();
 async function walkFranchise(root){
-  const chain = [root];
-  const movies = [];
-  const seenMovieIds = new Set();
-  let current = root;
-  for (let i=0; i<12; i++){
-    const data = await alQuery(SEASON_WALK_QUERY, { id: current.id });
+  const isTV = f => f === 'TV' || f === 'TV_SHORT';
+  const visited = new Map(); visited.set(root.id, root);
+  const movies = new Map();
+  const queue = [root.id];
+  let guard = 0;
+  while (queue.length && guard < 20) {
+    guard++;
+    const id = queue.shift();
+    const data = await alQuery(SEASON_WALK_QUERY, { id });
     const edges = data.Media?.relations?.edges || [];
-    edges.filter(e => SEASON_RELATION_TYPES.includes(e.relationType) && e.node.format === 'MOVIE').forEach(e => {
-      if (!seenMovieIds.has(e.node.id)) { seenMovieIds.add(e.node.id); movies.push(e.node); }
+    edges.forEach(e => {
+      if (!SEASON_RELATION_TYPES.includes(e.relationType)) return;
+      const node = e.node;
+      if (isTV(node.format)) {
+        if (!visited.has(node.id)) { visited.set(node.id, node); queue.push(node.id); }
+      } else if (node.format === 'MOVIE') {
+        if (!movies.has(node.id)) movies.set(node.id, node);
+      }
     });
-    const next = edges.find(e => SEASON_RELATION_TYPES.includes(e.relationType) && (e.node.format==='TV'||e.node.format==='TV_SHORT'));
-    if (!next) break;
-    current = next.node;
-    chain.push(current);
   }
-  return { seasons: chain, movies };
+  const seasons = Array.from(visited.values()).sort((a,b) => {
+    const ay = a.startDate?.year || a.seasonYear || 0, by = b.startDate?.year || b.seasonYear || 0;
+    if (ay !== by) return ay - by;
+    return (a.startDate?.month||0) - (b.startDate?.month||0);
+  });
+  return { seasons, movies: Array.from(movies.values()) };
 }
 // Grid cards show an approximate count instantly (from one-hop relations already in hand), then
 // silently walk the real chain in the background and patch just that card's label in place —
@@ -1179,8 +1255,8 @@ function ensureFranchiseCount(root){
     franchisePending.delete(root.id);
     const el = document.querySelector(`.card[data-series-id="${root.id}"] .formattag`);
     if (el) {
-      let label = `📺 ${result.seasons.length} season${result.seasons.length>1?'s':''}`;
-      if (result.movies.length) label += ` · 🎬 ${result.movies.length} movie${result.movies.length>1?'s':''}`;
+      let label = `${result.seasons.length} season${result.seasons.length>1?'s':''}`;
+      if (result.movies.length) label += ` · ${result.movies.length} movie${result.movies.length>1?'s':''}`;
       el.textContent = label;
     }
   }).catch(() => { franchisePending.delete(root.id); });
@@ -1244,7 +1320,7 @@ function renderAnimeModal(c){
       ${watchUrl ? `<a class="extlink" href="${watchUrl}" target="_blank" rel="noopener">↗ Open trailer on ${m.trailer.site==='youtube'?'YouTube':'Dailymotion'}</a>` : ''}
 
       <div class="actionrow">
-        <button class="actionbtn like ${isLiked(m.id)?'on':''}" data-action="modalLike" style="grid-column:span 3;">♥ ${isLiked(m.id) ? 'Liked' : 'Like'}</button>
+        <button class="actionbtn like ${isLiked(m.id)?'on':''}" data-action="modalLike" style="grid-column:span 3;">${isLiked(m.id) ? 'Liked' : 'Like'}</button>
       </div>
 
       <div class="list-block">
@@ -1359,7 +1435,7 @@ function scoreRowHtml(entry){
   }
   if (fmt === 'POINT_3') {
     const val = entry.score||0;
-    const opts = [[1,'😞'],[2,'😐'],[3,'😊']];
+    const opts = [[1,'Bad'],[2,'OK'],[3,'Good']];
     return `<div class="score-row"><span style="font-size:12px;color:var(--sub);font-weight:700;">Score</span><div class="score-smiley">
       ${opts.map(([n,e]) => `<button class="${n===val?'on':''}" data-action="setScoreStar" data-val="${n}">${e}</button>`).join('')}
     </div></div>`;
@@ -1400,8 +1476,8 @@ function renderSeriesModal(c){
           <button class="season-row" data-action="openMedia" data-mediajson='${esc(JSON.stringify(s))}'>
             <img src="${s.coverImage?.large||''}" alt="">
             <div class="season-info">
-              <div class="season-title">🎬 ${formatDate(s.startDate) || s.seasonYear || ''}</div>
-              <div class="season-sub">${esc(titleOf(s))}</div>
+              <div class="season-title">${formatDate(s.startDate) || s.seasonYear || ''}</div>
+              <div class="season-sub">${esc(titleOf(s))} · Movie</div>
             </div>
             ${s.averageScore ? `<span class="review-score">${s.averageScore}%</span>` : ''}
           </button>
@@ -1466,8 +1542,10 @@ async function bumpProgress(delta){
   let next = (c.entry.progress||0) + delta;
   if (next < 0) next = 0;
   if (max && next > max) next = max;
+  let status = c.entry.status;
+  if (state.settings.autoCompleteOnLastEp && max && next >= max) status = 'COMPLETED';
   try {
-    const saved = await alSaveEntry(c.data.id, { status: c.entry.status, progress: next, score: c.entry.score||0 });
+    const saved = await alSaveEntry(c.data.id, { status, progress: next, score: c.entry.score||0 });
     c.entry = saved;
     syncMylistCache(c.data, saved);
     render();
@@ -1521,8 +1599,11 @@ document.addEventListener('click', async (ev) => {
   else if (action === 'closeModalBg') { if (ev.target.classList.contains('modal-wrap')) closeAllModals(); }
   else if (action === 'playModal') {
     const c = curModal();
-    const wrap = document.getElementById('videoWrap');
-    wrap.innerHTML = `<iframe src="${trailerEmbed(c.data.trailer)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+    if (state.settings.openTrailerNewTab) { window.open(trailerWatch(c.data.trailer), '_blank', 'noopener'); }
+    else {
+      const wrap = document.getElementById('videoWrap');
+      wrap.innerHTML = `<iframe src="${trailerEmbed(c.data.trailer)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+    }
   }
   else if (action === 'modalLike') { const c = curModal(); if (c) { await doLike(c.data); renderModal(); } }
   else if (action === 'setStatus') { await setEntryStatus(t.dataset.status); }
@@ -1555,7 +1636,11 @@ document.addEventListener('click', async (ev) => {
   }
   else if (action === 'backSwipe') { state.swipe = { genre:null, mode: state.swipe.mode, queue:[], idx:0, page:1, playing:false, loading:false, error:null, seenPages:new Set() }; render(); }
   else if (action === 'setDiscoverMode') { state.swipe.mode = t.dataset.mode; render(); }
-  else if (action === 'playSwipe') { state.swipe.playing = true; render(); }
+  else if (action === 'playSwipe') {
+    const cur = state.swipe.queue[state.swipe.idx];
+    if (state.settings.openTrailerNewTab) { window.open(trailerWatch(cur.trailer), '_blank', 'noopener'); }
+    else { state.swipe.playing = true; render(); }
+  }
   else if (action === 'swipeSkip') { advanceSwipe(); }
   else if (action === 'swipeLike') { const c = state.swipe.queue[state.swipe.idx]; if (c) await doLike(c); advanceSwipe(); }
   else if (action === 'swipePlan') {
@@ -1580,10 +1665,49 @@ document.addEventListener('click', async (ev) => {
   else if (action === 'setDensity') { state.settings.gridDensity = t.dataset.density; applyGridDensity(state.settings.gridDensity); saveSettings(); render(); }
   else if (action === 'resetLiked') { state.local.liked = []; persistPrefs(); render(); }
   else if (action === 'toggleAutoplay') { state.settings.autoplayTrailer = t.checked; saveSettings(); render(); }
+  else if (action === 'toggleNewTab') { state.settings.openTrailerNewTab = t.checked; saveSettings(); render(); }
+  else if (action === 'toggleReduceMotion') { state.settings.reduceMotion = t.checked; applyReduceMotion(t.checked); saveSettings(); render(); }
+  else if (action === 'setDefaultDiscoverMode') { state.settings.defaultDiscoverMode = t.dataset.mode; saveSettings(); render(); }
+  else if (action === 'setDefaultMyListTab') { state.settings.defaultMyListTab = t.dataset.key; saveSettings(); render(); }
+  else if (action === 'toggleHideMovies') { state.settings.hideMoviesInBrowse = t.checked; saveSettings(); render(); }
+  else if (action === 'saveMinScore') {
+    const v = Math.max(0, Math.min(100, Number(document.getElementById('minScoreInput').value) || 0));
+    state.settings.minScoreFilter = v; saveSettings(); render();
+  }
+  else if (action === 'toggleAutoComplete') { state.settings.autoCompleteOnLastEp = t.checked; saveSettings(); render(); }
+  else if (action === 'exportData') {
+    const blob = new Blob([JSON.stringify({ settings: state.settings, liked: state.local.liked, theme: state.theme }, null, 2)], { type:'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'anibrowse-data.json'; a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  else if (action === 'importData') { document.getElementById('importFileInput').click(); }
+  else if (action === 'resetSettings') {
+    if (confirm('Reset all settings to their defaults?')) {
+      state.settings = { autoplayTrailer:false, gridDensity:'comfortable', showScores:true, openTrailerNewTab:false, reduceMotion:false, defaultDiscoverMode:'random', hideMoviesInBrowse:false, minScoreFilter:0, autoCompleteOnLastEp:true, defaultMyListTab:'CURRENT' };
+      saveSettings(); applyGridDensity(state.settings.gridDensity); applyReduceMotion(false); render();
+    }
+  }
 
   else if (action === 'setMode') { applyTheme({ family: (CATPPUCCIN[state.theme.family] ? 'orange' : state.theme.family), mode: t.dataset.mode }); render(); }
   else if (action === 'setFamily') { applyTheme({ family: t.dataset.family, mode: state.theme.mode === 'light' ? 'light' : 'dark' }); render(); }
   else if (action === 'setCatppuccin') { applyTheme({ family: t.dataset.family, mode: t.dataset.family === 'catppuccin-latte' ? 'light' : 'dark' }); render(); }
+});
+document.addEventListener('change', (ev) => {
+  if (ev.target.id === 'importFileInput' && ev.target.files[0]) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        if (parsed.settings) { state.settings = { ...state.settings, ...parsed.settings }; saveSettings(); applyGridDensity(state.settings.gridDensity); applyReduceMotion(state.settings.reduceMotion); }
+        if (Array.isArray(parsed.liked)) { state.local.liked = parsed.liked; persistPrefs(); }
+        if (parsed.theme) { applyTheme(parsed.theme); }
+        render();
+        alert('Data imported.');
+      } catch(e) { alert('That file doesn\u2019t look like valid AniBrowse data.'); }
+    };
+    reader.readAsText(ev.target.files[0]);
+  }
 });
 document.addEventListener('input', (ev) => {
   if (ev.target.dataset.role === 'browseSearch') onBrowseSearchInput(ev.target.value);
