@@ -476,10 +476,23 @@ function saveSettings(){ LS.set('app_settings', state.settings); }
 
 /* ============================== ANILIST ============================== */
 const AL_GQL = 'https://graphql.anilist.co';
-async function alQuery(query, variables, auth){
+async function alQuery(query, variables, auth, _retry){
   const headers = { 'Content-Type':'application/json', 'Accept':'application/json' };
   if (auth && state.anilist?.token) headers['Authorization'] = 'Bearer ' + state.anilist.token;
-  const res = await fetch(AL_GQL, { method:'POST', headers, body: JSON.stringify({query, variables}) });
+  let res;
+  try {
+    res = await fetch(AL_GQL, { method:'POST', headers, body: JSON.stringify({query, variables}) });
+  } catch(networkErr) {
+    // transient network blip — retry a couple of times with a short backoff before giving up
+    if ((_retry||0) < 2) { await new Promise(r => setTimeout(r, 400 * ((_retry||0)+1))); return alQuery(query, variables, auth, (_retry||0)+1); }
+    throw networkErr;
+  }
+  if (res.status === 429 && (_retry||0) < 3) {
+    // rate-limited — back off and retry rather than surfacing a failure
+    const wait = Number(res.headers.get('retry-after')) * 1000 || 800 * ((_retry||0)+1);
+    await new Promise(r => setTimeout(r, wait));
+    return alQuery(query, variables, auth, (_retry||0)+1);
+  }
   const json = await res.json();
   if (json.errors) throw new Error(json.errors[0]?.message || 'AniList error');
   return json.data;
@@ -690,23 +703,38 @@ function spinnerHtml(){
 }
 const genreBannerCache = {};
 const genreBannerPending = new Set();
-async function loadGenreBanner(g){
+let activeBannerLoads = 0;
+const MAX_CONCURRENT_BANNERS = 2;
+const bannerLoadQueue = [];
+function pumpBannerQueue(){
+  while (activeBannerLoads < MAX_CONCURRENT_BANNERS && bannerLoadQueue.length) {
+    const job = bannerLoadQueue.shift();
+    activeBannerLoads++;
+    job().finally(() => { activeBannerLoads--; pumpBannerQueue(); });
+  }
+}
+function loadGenreBanner(g){
   if (genreBannerCache[g] || genreBannerPending.has(g)) return;
   genreBannerPending.add(g);
-  try {
-    const page = Math.floor(Math.random()*4) + 1; // pick from a handful of that genre's most popular titles, not always #1
-    const data = await alQuery(`query($genre:String,$page:Int){
-      Page(page:$page, perPage:1){ media(genre:$genre, sort:POPULARITY_DESC, type:ANIME, isAdult:false){ bannerImage coverImage{ large } } }
-    }`, { genre: g, page });
-    const media = data.Page.media[0];
-    const img = media?.bannerImage || media?.coverImage?.large;
-    if (img) {
-      genreBannerCache[g] = img;
-      const el = document.querySelector(`.genretile[data-genre-tile="${cssEscape(g)}"]`);
-      if (el) el.style.backgroundImage = `url('${img}')`;
-    }
-  } catch(e) { /* keep the color fallback */ }
-  genreBannerPending.delete(g);
+  bannerLoadQueue.push(async () => {
+    try {
+      // pull a pool of ~30 popular titles for this genre in one request, pick one at random —
+      // more variety without firing extra network calls
+      const data = await alQuery(`query($genre:String){
+        Page(page:1, perPage:30){ media(genre:$genre, sort:POPULARITY_DESC, type:ANIME, isAdult:false){ bannerImage coverImage{ large } } }
+      }`, { genre: g });
+      const pool = (data.Page.media || []).filter(m => m.bannerImage || m.coverImage?.large);
+      const media = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+      const img = media?.bannerImage || media?.coverImage?.large;
+      if (img) {
+        genreBannerCache[g] = img;
+        const el = document.querySelector(`.genretile[data-genre-tile="${cssEscape(g)}"]`);
+        if (el) el.style.backgroundImage = `url('${img}')`;
+      }
+    } catch(e) { /* keep the color fallback */ }
+    genreBannerPending.delete(g);
+  });
+  pumpBannerQueue();
 }
 function cssEscape(s){ return s.replace(/["\\]/g, '\\$&'); }
 function chipsHtml(title, action){
