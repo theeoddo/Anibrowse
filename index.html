@@ -109,10 +109,11 @@
   .genretile{
     position:relative; aspect-ratio:16/10; border-radius:16px; border:none; cursor:pointer; overflow:hidden;
     display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-end; padding:12px;
-    color:#fff; text-align:left; transition:transform .12s;
+    color:#fff; text-align:left; transition:transform .12s, background-image .4s;
+    background-size:cover; background-position:center;
   }
   .genretile:active{ transform:scale(.96); }
-  .genretile .emoji{ position:absolute; top:8px; right:10px; font-size:28px; opacity:.7; }
+  .genretile::after{ content:''; position:absolute; inset:0; background:linear-gradient(0deg, rgba(0,0,0,.75) 0%, rgba(0,0,0,.15) 55%, rgba(0,0,0,.05) 100%); }
   .genretile .gname{ font-weight:900; font-size:14.5px; text-shadow:0 1px 6px rgba(0,0,0,.4); position:relative; z-index:1; }
   .grid{
     display:grid; gap:12px; padding:0 16px 24px;
@@ -219,6 +220,42 @@
   .theme-fluent .card{ border-radius:8px; }
   .theme-fluent .thumb{ border-radius:7px 7px 0 0; }
   .theme-fluent .modal{ border-radius:12px 12px 0 0; }
+
+  /* Terminal: monospace, ASCII prompt markers, sharp dashed borders, blinking cursor */
+  .theme-terminal, .theme-terminal input, .theme-terminal button, .theme-terminal textarea{
+    font-family:'Courier New', ui-monospace, monospace !important;
+  }
+  .theme-terminal .card, .theme-terminal .card-box, .theme-terminal .review-item, .theme-terminal .season-row,
+  .theme-terminal .modal, .theme-terminal .searchbar{ border-radius:2px; border:1px dashed var(--line); }
+  .theme-terminal .thumb{ border-radius:0; filter:contrast(1.05) saturate(.85); }
+  .theme-terminal .section-title::before{ content:'> '; color:var(--accent); }
+  .theme-terminal .logo-text::after{ content:'_'; animation:blink 1s step-start infinite; color:var(--accent); }
+  .theme-terminal .logo span.g{ animation:none; background:none; -webkit-text-fill-color:var(--accent); color:var(--accent); }
+  .theme-terminal .logo-badge{ border-radius:2px; box-shadow:none; }
+  .theme-terminal .chip, .theme-terminal .status-chip.on, .theme-terminal .mytab, .theme-terminal .btn.primary{ border-radius:2px; }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  /* Liquid Glass: frosted layered blur + animated rainbow refraction ring + a soft top sheen ("reflection") */
+  @property --angle{ syntax:'<angle>'; inherits:false; initial-value:0deg; }
+  @keyframes glassspin{ to{ --angle:360deg; } }
+  .theme-liquidglass{ background:radial-gradient(120% 90% at 20% 0%, #1b2340 0%, #0d1220 60%); }
+  .theme-liquidglass .card, .theme-liquidglass .modal, .theme-liquidglass .card-box, .theme-liquidglass .searchbar,
+  .theme-liquidglass .review-item, .theme-liquidglass .season-row{
+    backdrop-filter:blur(20px) saturate(1.7); -webkit-backdrop-filter:blur(20px) saturate(1.7);
+    position:relative; isolation:isolate;
+  }
+  .theme-liquidglass .card::before, .theme-liquidglass .card-box::before, .theme-liquidglass .modal::before{
+    content:''; position:absolute; inset:0; border-radius:inherit; padding:1.5px; z-index:2; pointer-events:none;
+    background:conic-gradient(from var(--angle,0deg), #ff5da2, #ffd23f, #5fe089, #4dd0e1, #5b9dff, #b083ff, #ff5da2);
+    -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude;
+    opacity:.6; animation:glassspin 7s linear infinite;
+  }
+  .theme-liquidglass .card::after{
+    content:''; position:absolute; inset:0; z-index:1; pointer-events:none; border-radius:inherit;
+    background:linear-gradient(115deg, rgba(255,255,255,.35) 0%, rgba(255,255,255,.05) 30%, rgba(255,255,255,0) 55%);
+  }
+  .theme-liquidglass .card{ overflow:hidden; }
 
   /* search */
   .searchbar{ display:flex; align-items:center; gap:8px; margin:12px 16px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:9px 12px; }
@@ -340,6 +377,14 @@ const CATPPUCCIN = {
   'catppuccin-mocha':     { bg:'#1e1e2e', bg2:'#181825', card:'#181825', cardHi:'#313244', line:'#313244', text:'#cdd6f4', sub:'#9399b2', accent:'#cba6f7' },
 };
 const CATPPUCCIN_LABELS = { 'catppuccin-latte':'Latte', 'catppuccin-frappe':'Frappé', 'catppuccin-macchiato':'Macchiato', 'catppuccin-mocha':'Mocha' };
+// Fixed, self-contained branded/aesthetic themes (not user-colorable, like Catppuccin above).
+const SPECIAL_THEMES = {
+  spotify:        { bg:'#0a0a0a', bg2:'#121212', card:'#181818', cardHi:'#282828', line:'#282828', text:'#ffffff', sub:'#b3b3b3', accent:'#1db954' },
+  'apple-music':  { bg:'#000000', bg2:'#0a0a0c', card:'#1c1c1e', cardHi:'#2c2c2e', line:'#2c2c2e', text:'#ffffff', sub:'#98989d', accent:'#fc3c44' },
+  terminal:       { bg:'#000000', bg2:'#020a02', card:'#020f02', cardHi:'#0a1f0a', line:'#1f7a1f', text:'#39ff14', sub:'#28a428', accent:'#39ff14' },
+  'liquid-glass': { bg:'#0d1220', bg2:'#131a30', card:'rgba(255,255,255,0.07)', cardHi:'rgba(255,255,255,0.12)', line:'rgba(255,255,255,0.28)', text:'#f5f7ff', sub:'#a9b3d6', accent:'#b083ff' },
+};
+const SPECIAL_THEME_LABELS = { spotify:'Spotify', 'apple-music':'Apple Music', terminal:'Terminal', 'liquid-glass':'Liquid Glass' };
 // Two fully custom, user-colorable themes styled after real design languages:
 // - "custom-expressive": Google's Material 3 Expressive (bold varied shapes, big tonal surfaces derived from one seed color)
 // - "custom-fluent": Microsoft's Fluent 2 (translucent "Acrylic" layered surfaces, tighter corners, subtle depth)
@@ -350,6 +395,7 @@ function customColorFor(family){
 }
 function themeVars(theme){
   if (CATPPUCCIN[theme.family]) return CATPPUCCIN[theme.family];
+  if (SPECIAL_THEMES[theme.family]) return SPECIAL_THEMES[theme.family];
   const base = theme.mode === 'light' ? NEUTRAL_LIGHT : NEUTRAL_DARK;
   if (theme.family === 'custom-expressive') {
     const accent = theme.customColor || customColorFor('custom-expressive');
@@ -396,6 +442,8 @@ function applyTheme(theme){
   root.setProperty('--accent', v.accent);
   document.documentElement.classList.toggle('theme-expressive', theme.family === 'custom-expressive');
   document.documentElement.classList.toggle('theme-fluent', theme.family === 'custom-fluent');
+  document.documentElement.classList.toggle('theme-terminal', theme.family === 'terminal');
+  document.documentElement.classList.toggle('theme-liquidglass', theme.family === 'liquid-glass');
   state.theme = theme;
   LS.set('theme', theme);
 }
@@ -440,9 +488,12 @@ const MEDIA_FIELDS = `
   id idMal
   title{ romaji english }
   coverImage{ large color }
-  averageScore episodes status season seasonYear startDate{ year month day } genres description format
+  averageScore episodes status season seasonYear startDate{ year month day } genres format
   trailer{ id site thumbnail }
   relations{ edges{ relationType node{ id format } } }
+`;
+const MEDIA_FIELDS_FULL = MEDIA_FIELDS + `
+  description
 `;
 const SEASON_WALK_QUERY = `query($id:Int){
   Media(id:$id){
@@ -464,7 +515,7 @@ const MEDIA_SEARCH_QUERY = `query($page:Int,$perPage:Int,$search:String){
 }`;
 const MEDIA_DETAIL_QUERY = `query($id:Int){
   Media(id:$id){
-    ${MEDIA_FIELDS}
+    ${MEDIA_FIELDS_FULL}
     siteUrl
     studios{ edges{ isMain node{ id name } } }
     characters(sort:[ROLE,RELEVANCE], perPage:25){
@@ -637,13 +688,40 @@ function spinnerHtml(){
     <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="#8b93a7" stroke-width="2"><circle cx="12" cy="12" r="9" stroke-dasharray="42" stroke-dashoffset="14"/></svg>
   </div>`;
 }
+const genreBannerCache = {};
+const genreBannerPending = new Set();
+async function loadGenreBanner(g){
+  if (genreBannerCache[g] || genreBannerPending.has(g)) return;
+  genreBannerPending.add(g);
+  try {
+    const page = Math.floor(Math.random()*4) + 1; // pick from a handful of that genre's most popular titles, not always #1
+    const data = await alQuery(`query($genre:String,$page:Int){
+      Page(page:$page, perPage:1){ media(genre:$genre, sort:POPULARITY_DESC, type:ANIME, isAdult:false){ bannerImage coverImage{ large } } }
+    }`, { genre: g, page });
+    const media = data.Page.media[0];
+    const img = media?.bannerImage || media?.coverImage?.large;
+    if (img) {
+      genreBannerCache[g] = img;
+      const el = document.querySelector(`.genretile[data-genre-tile="${cssEscape(g)}"]`);
+      if (el) el.style.backgroundImage = `url('${img}')`;
+    }
+  } catch(e) { /* keep the color fallback */ }
+  genreBannerPending.delete(g);
+}
+function cssEscape(s){ return s.replace(/["\\]/g, '\\$&'); }
 function chipsHtml(title, action){
   return `<div class="section-title">${title}</div>
-  <div class="chips">${state.genres.map(g => `
-    <button class="genretile" style="background:linear-gradient(155deg, ${colorFor(g)}, color-mix(in srgb, ${colorFor(g)} 55%, black))" data-action="${action}" data-genre="${esc(g)}">
+  <div class="chips">${state.genres.map(g => {
+    if (!genreBannerCache[g]) loadGenreBanner(g);
+    const bg = genreBannerCache[g]
+      ? `background-image:url('${esc(genreBannerCache[g])}');`
+      : `background-image:linear-gradient(155deg, ${colorFor(g)}, color-mix(in srgb, ${colorFor(g)} 55%, black));`;
+    return `
+    <button class="genretile" style="${bg}" data-genre-tile="${esc(g)}" data-action="${action}" data-genre="${esc(g)}">
       <span class="gname">${esc(g)}</span>
     </button>
-  `).join('')}</div>`;
+  `;
+  }).join('')}</div>`;
 }
 const STATUS_LABELS = { CURRENT:'Watching', PLANNING:'Planning', COMPLETED:'Completed', PAUSED:'Paused', DROPPED:'Dropped', REPEATING:'Repeating' };
 const STATUS_COLORS = { CURRENT:'#5fe089', PLANNING:'#5b9dff', COMPLETED:'#b083ff', PAUSED:'#ffd23f', DROPPED:'#ff5c6c', REPEATING:'#2fd1c5' };
@@ -1073,6 +1151,14 @@ function renderSettings(){
           `).join('')}
         </div>
 
+        <div class="theme-label">More themes</div>
+        <div class="swatches">
+          ${Object.entries(SPECIAL_THEMES).map(([key,v]) => `
+            <button class="swatch ${state.theme.family===key?'on':''}" data-action="setSpecialTheme" data-family="${key}" style="background:${v.accent}" title="${SPECIAL_THEME_LABELS[key]}"></button>
+          `).join('')}
+        </div>
+        <div style="font-size:11px;color:var(--sub);margin:2px 0 0;">Spotify · Apple Music · Terminal · Liquid Glass</div>
+
         <div class="theme-label">Custom (pick your own accent color)</div>
         <div class="swatches">
           <div class="customswatch-wrap">
@@ -1177,9 +1263,11 @@ function renderSettings(){
     </div>
   `;
 }
-function isCatppuccin(){ return !!CATPPUCCIN[state.theme.family]; }
+function isFixedTheme(){ return !!CATPPUCCIN[state.theme.family] || !!SPECIAL_THEMES[state.theme.family]; }
+function isCatppuccin(){ return isFixedTheme(); }
 function themeLabel(theme){
   if (CATPPUCCIN[theme.family]) return 'Catppuccin ' + CATPPUCCIN_LABELS[theme.family];
+  if (SPECIAL_THEMES[theme.family]) return SPECIAL_THEME_LABELS[theme.family];
   if (theme.family === 'custom-expressive') return `Material 3 Expressive (${theme.mode === 'light' ? 'Light' : 'Dark'})`;
   if (theme.family === 'custom-fluent') return `Fluent 2 (${theme.mode === 'light' ? 'Light' : 'Dark'})`;
   const name = theme.family.replace('pastel-', 'Pastel ').replace(/^[a-z]/, c => c.toUpperCase());
@@ -1225,7 +1313,9 @@ async function walkFranchise(root){
   while (queue.length && guard < 20) {
     guard++;
     const id = queue.shift();
-    const data = await alQuery(SEASON_WALK_QUERY, { id });
+    let data;
+    try { data = await alQuery(SEASON_WALK_QUERY, { id }); }
+    catch(e) { break; } // keep whatever we've already found instead of discarding it on a single failed hop
     const edges = data.Media?.relations?.edges || [];
     edges.forEach(e => {
       if (!SEASON_RELATION_TYPES.includes(e.relationType)) return;
@@ -1247,10 +1337,20 @@ async function walkFranchise(root){
 // Grid cards show an approximate count instantly (from one-hop relations already in hand), then
 // silently walk the real chain in the background and patch just that card's label in place —
 // no full re-render, so it never resets your scroll position while browsing.
+let activeFranchiseWalks = 0;
+const MAX_CONCURRENT_WALKS = 2;
+const franchiseWalkQueue = [];
+function pumpFranchiseQueue(){
+  while (activeFranchiseWalks < MAX_CONCURRENT_WALKS && franchiseWalkQueue.length) {
+    const job = franchiseWalkQueue.shift();
+    activeFranchiseWalks++;
+    job().finally(() => { activeFranchiseWalks--; pumpFranchiseQueue(); });
+  }
+}
 function ensureFranchiseCount(root){
   if (franchiseCache.has(root.id) || franchisePending.has(root.id)) return;
   franchisePending.add(root.id);
-  walkFranchise(root).then(result => {
+  franchiseWalkQueue.push(() => walkFranchise(root).then(result => {
     franchiseCache.set(root.id, result);
     franchisePending.delete(root.id);
     const el = document.querySelector(`.card[data-series-id="${root.id}"] .formattag`);
@@ -1259,7 +1359,8 @@ function ensureFranchiseCount(root){
       if (result.movies.length) label += ` · ${result.movies.length} movie${result.movies.length>1?'s':''}`;
       el.textContent = label;
     }
-  }).catch(() => { franchisePending.delete(root.id); });
+  }).catch(() => { franchisePending.delete(root.id); }));
+  pumpFranchiseQueue();
 }
 async function loadSeriesChain(rootId, root){
   let result = franchiseCache.get(rootId);
@@ -1692,6 +1793,7 @@ document.addEventListener('click', async (ev) => {
   else if (action === 'setMode') { applyTheme({ family: (CATPPUCCIN[state.theme.family] ? 'orange' : state.theme.family), mode: t.dataset.mode }); render(); }
   else if (action === 'setFamily') { applyTheme({ family: t.dataset.family, mode: state.theme.mode === 'light' ? 'light' : 'dark' }); render(); }
   else if (action === 'setCatppuccin') { applyTheme({ family: t.dataset.family, mode: t.dataset.family === 'catppuccin-latte' ? 'light' : 'dark' }); render(); }
+  else if (action === 'setSpecialTheme') { applyTheme({ family: t.dataset.family, mode: 'dark' }); render(); }
 });
 document.addEventListener('change', (ev) => {
   if (ev.target.id === 'importFileInput' && ev.target.files[0]) {
