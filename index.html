@@ -1479,12 +1479,13 @@ async function walkFranchise(root){
   const movies = new Map();
   const queue = [root.id];
   let guard = 0;
+  let complete = true;
   while (queue.length && guard < 20) {
     guard++;
     const id = queue.shift();
     let data;
     try { data = await alQuery(SEASON_WALK_QUERY, { id }); }
-    catch(e) { break; } // keep whatever we've already found instead of discarding it on a single failed hop
+    catch(e) { complete = false; break; } // keep whatever we've already found, but don't trust this as the final answer
     const edges = data.Media?.relations?.edges || [];
     edges.forEach(e => {
       if (!SEASON_RELATION_TYPES.includes(e.relationType)) return;
@@ -1496,12 +1497,13 @@ async function walkFranchise(root){
       }
     });
   }
+  if (queue.length) complete = false; // hit the safety guard with more still queued — not actually done
   const seasons = Array.from(visited.values()).sort((a,b) => {
     const ay = a.startDate?.year || a.seasonYear || 0, by = b.startDate?.year || b.seasonYear || 0;
     if (ay !== by) return ay - by;
     return (a.startDate?.month||0) - (b.startDate?.month||0);
   });
-  return { seasons, movies: Array.from(movies.values()) };
+  return { seasons, movies: Array.from(movies.values()), complete };
 }
 // Grid cards show an approximate count instantly (from one-hop relations already in hand), then
 // silently walk the real chain in the background and patch just that card's label in place —
@@ -1518,8 +1520,8 @@ function pumpFranchiseQueue(){
 }
 function ensureFranchiseCount(root){
   if (franchiseCache.has(root.id) || franchisePending.has(root.id)) return;
-  const cached = Cache.get('franchise:' + root.id, 14*DAY);
-  if (cached) {
+  const cached = Cache.get('franchisev2:' + root.id, 14*DAY);
+  if (cached && cached.complete) {
     franchiseCache.set(root.id, cached);
     const el = document.querySelector(`.card[data-series-id="${root.id}"] .formattag`);
     if (el) {
@@ -1532,7 +1534,7 @@ function ensureFranchiseCount(root){
   franchisePending.add(root.id);
   franchiseWalkQueue.push(() => walkFranchise(root).then(result => {
     franchiseCache.set(root.id, result);
-    Cache.set('franchise:' + root.id, result);
+    if (result.complete) Cache.set('franchisev2:' + root.id, result); // only persist trustworthy, fully-walked results
     franchisePending.delete(root.id);
     const el = document.querySelector(`.card[data-series-id="${root.id}"] .formattag`);
     if (el) {
@@ -1544,10 +1546,11 @@ function ensureFranchiseCount(root){
   pumpFranchiseQueue();
 }
 async function loadSeriesChain(rootId, root){
-  let result = franchiseCache.get(rootId) || Cache.get('franchise:' + rootId, 14*DAY);
+  let result = franchiseCache.get(rootId);
+  if (!result || !result.complete) result = Cache.get('franchisev2:' + rootId, 14*DAY);
   try {
-    if (!result) { result = await walkFranchise(root); franchiseCache.set(rootId, result); Cache.set('franchise:' + rootId, result); }
-  } catch(e){ result = { seasons:[root], movies:[] }; /* show whatever we found so far */ }
+    if (!result || !result.complete) { result = await walkFranchise(root); franchiseCache.set(rootId, result); if (result.complete) Cache.set('franchisev2:' + rootId, result); }
+  } catch(e){ result = result || { seasons:[root], movies:[], complete:false }; /* show whatever we found so far */ }
   const c = state.modalStack.find(x => x.type==='series' && x.data.id===rootId);
   if (c) { c.seasons = result.seasons; c.movies = result.movies; c.loading = false; render(); }
 }
