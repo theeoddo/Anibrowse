@@ -33,7 +33,7 @@
   #app{ max-width:900px; margin:0 auto; height:100dvh; display:flex; flex-direction:column; background:var(--bg); }
   @media (min-width:860px){
     #app{
-      max-width:1200px; display:grid;
+      max-width:min(96vw, 1800px); display:grid;
       grid-template-columns:104px 1fr; grid-template-rows:auto 1fr;
       grid-template-areas:"header header" "nav main";
     }
@@ -47,10 +47,16 @@
     .grid{ grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); }
     .chips{ grid-template-columns:repeat(4,1fr); }
     .modal-wrap{ align-items:center; }
-    .modal{ max-width:640px; max-height:88dvh; }
+    .modal{ max-width:680px; max-height:88dvh; }
   }
   @media (min-width:1200px){
-    .grid{ grid-template-columns:repeat(auto-fill, minmax(165px,1fr)); }
+    .grid{ grid-template-columns:repeat(auto-fill, minmax(170px,1fr)); }
+    .chips{ grid-template-columns:repeat(5,1fr); }
+  }
+  @media (min-width:1600px){
+    .grid{ grid-template-columns:repeat(auto-fill, minmax(185px,1fr)); }
+    .chips{ grid-template-columns:repeat(6,1fr); }
+    .modal{ max-width:760px; }
   }
   header{
     display:flex; align-items:center; justify-content:space-between;
@@ -169,6 +175,15 @@
   .swipe-stage img.bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.28; filter:blur(2px); z-index:0; }
   .swipe-stage iframe{ position:absolute; inset:0; width:100%; height:100%; border:none; z-index:1; opacity:1; background:#000; }
   .swipe-title{ position:absolute; top:10px; left:10px; right:56px; background:rgba(0,0,0,.6); padding:6px 10px; border-radius:8px; font-weight:800; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; z-index:2; pointer-events:none; }
+  .swipe-tapzone{ position:absolute; inset:0; z-index:3; background:none; border:none; cursor:pointer; }
+  .swipe-mutebtn{ position:absolute; top:10px; right:10px; z-index:4; background:rgba(0,0,0,.6); border:none; color:#fff;
+    width:32px; height:32px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .swipe-pausehint{ position:absolute; inset:0; z-index:3; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+  .swipe-pausehint svg{ width:56px; height:56px; opacity:0; background:rgba(0,0,0,.45); border-radius:50%; padding:14px; transition:opacity .15s; }
+  .swipe-pausehint.show svg{ opacity:1; }
+  .swipe-progress{ position:absolute; left:0; right:0; bottom:0; height:3px; background:rgba(255,255,255,.2); z-index:4; }
+  .swipe-progress-fill{ height:100%; width:0%; background:var(--accent); transition:width .3s linear; }
+  .swipe-region-msg{ position:relative; z-index:1; color:#fff; background:rgba(0,0,0,.7); padding:10px 16px; border-radius:10px; font-size:12.5px; text-align:center; }
   .swipe-actions{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:12px 14px; border-top:1px solid var(--line); flex-shrink:0; }
   .settings{ padding:16px; }
   .field{ margin-bottom:14px; }
@@ -351,6 +366,23 @@ const LS = {
   get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
   set(k, v){ localStorage.setItem(k, JSON.stringify(v)); },
 };
+// Generic on-device cache with a max age, so repeat visits skip the network entirely for
+// anything still fresh — cuts both load time and how often we hit AniList's rate limit.
+const Cache = {
+  get(key, maxAgeMs){
+    try {
+      const raw = localStorage.getItem('cache:' + key);
+      if (!raw) return undefined;
+      const { t, v } = JSON.parse(raw);
+      if (Date.now() - t > maxAgeMs) return undefined;
+      return v;
+    } catch(e) { return undefined; }
+  },
+  set(key, value){
+    try { localStorage.setItem('cache:' + key, JSON.stringify({ t: Date.now(), v: value })); } catch(e) { /* storage full — just skip caching */ }
+  },
+};
+const DAY = 24*60*60*1000;
 const REDIRECT_URI = location.origin + location.pathname;
 const PALETTE = ['#ff7a3d','#ff5da2','#2fd1c5','#5b9dff','#b083ff','#ffd23f','#5fe089','#ff5c6c','#4dd0e1','#ffb86b'];
 const colorFor = s => PALETTE[Math.abs([...s].reduce((a,c)=>a+c.charCodeAt(0),0)) % PALETTE.length];
@@ -384,7 +416,7 @@ const SPECIAL_THEMES = {
   terminal:       { bg:'#000000', bg2:'#020a02', card:'#020f02', cardHi:'#0a1f0a', line:'#1f7a1f', text:'#39ff14', sub:'#28a428', accent:'#39ff14' },
   'liquid-glass': { bg:'#0d1220', bg2:'#131a30', card:'rgba(255,255,255,0.07)', cardHi:'rgba(255,255,255,0.12)', line:'rgba(255,255,255,0.28)', text:'#f5f7ff', sub:'#a9b3d6', accent:'#b083ff' },
 };
-const SPECIAL_THEME_LABELS = { spotify:'Spotify', 'apple-music':'Apple Music', terminal:'Terminal', 'liquid-glass':'Liquid Glass' };
+const SPECIAL_THEME_LABELS = { spotify:'Spotify', 'apple-music':'Apple Music', terminal:'Terminal', 'liquid-glass':'Prism' };
 // Two fully custom, user-colorable themes styled after real design languages:
 // - "custom-expressive": Google's Material 3 Expressive (bold varied shapes, big tonal surfaces derived from one seed color)
 // - "custom-fluent": Microsoft's Fluent 2 (translucent "Acrylic" layered surfaces, tighter corners, subtle depth)
@@ -452,7 +484,7 @@ let state = {
   settings: LS.get('app_settings', {
     autoplayTrailer: false, gridDensity: 'comfortable', showScores: true, openTrailerNewTab: false,
     reduceMotion: false, defaultDiscoverMode: 'random', hideMoviesInBrowse: false,
-    minScoreFilter: 0, autoCompleteOnLastEp: true, defaultMyListTab: 'CURRENT',
+    minScoreFilter: 0, autoCompleteOnLastEp: true, defaultMyListTab: 'CURRENT', swipeMuted: false,
   }),
   tab: 'browse',
   genres: [],
@@ -463,7 +495,7 @@ let state = {
   swipe:  { genre: null, mode: LS.get('app_settings',{}).defaultDiscoverMode || 'random', queue: [], idx: 0, page: 1, playing: false, loading: false, error: null, seenPages: new Set() },
   mylist: { tab: LS.get('app_settings',{}).defaultMyListTab || 'CURRENT', byStatus: { CURRENT:[], PLANNING:[], COMPLETED:[], PAUSED:[], DROPPED:[], REPEATING:[] }, loading: false, error: null },
   modalStack: [], // [{type:'anime'|'studio'|'person', data, detail, entry, loading}]
-  quiz: { step:0, answers:{}, done:false, loading:false, results:[] },
+  quiz: { askedIds:[], answers:{}, done:false, loading:false, results:[] },
   theme: LS.get('theme', { family: 'orange', mode: 'dark' }),
 };
 applyTheme(state.theme);
@@ -649,6 +681,69 @@ function trailerWatch(t){
   if (t.site === 'dailymotion') return `https://www.dailymotion.com/video/${t.id}`;
   return null;
 }
+function trailerVideoId(t){ return (t && t.site === 'youtube') ? t.id : null; }
+
+/* Custom-controlled YouTube player for Discover mode: hides YouTube's own UI entirely
+   (no logo, related videos, or native controls) and drives playback via our own
+   play/pause/mute/progress controls using the real YouTube IFrame Player API. */
+let ytApiLoading = false;
+let ytPlayer = null, ytProgressTimer = null;
+function ensureYTApi(cb){
+  if (window.YT && window.YT.Player) { cb(); return; }
+  if (!ytApiLoading) {
+    ytApiLoading = true;
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+  }
+  const prevReady = window.onYouTubeIframeAPIReady;
+  window.onYouTubeIframeAPIReady = () => { if (prevReady) prevReady(); cb(); };
+  const poll = setInterval(() => { if (window.YT && window.YT.Player) { clearInterval(poll); cb(); } }, 200);
+}
+function destroySwipePlayer(){
+  if (ytProgressTimer) { clearInterval(ytProgressTimer); ytProgressTimer = null; }
+  if (ytPlayer) { try { ytPlayer.destroy(); } catch(e){} ytPlayer = null; }
+}
+function createSwipePlayer(videoId){
+  destroySwipePlayer();
+  ensureYTApi(() => {
+    const host = document.getElementById('swipeYtHost');
+    if (!host) return;
+    ytPlayer = new YT.Player(host, {
+      videoId,
+      playerVars: {
+        autoplay:1, controls:0, modestbranding:1, rel:0, disablekb:1, fs:0,
+        iv_load_policy:3, playsinline:1, cc_load_policy:1, cc_lang_pref:'en', hl:'en',
+        mute: state.settings.swipeMuted ? 1 : 0,
+      },
+      events: {
+        onReady: (e) => { e.target.playVideo(); startSwipeProgress(); },
+        onError: () => { showRegionBlockedAndSkip(); },
+      },
+    });
+  });
+}
+function startSwipeProgress(){
+  if (ytProgressTimer) clearInterval(ytProgressTimer);
+  ytProgressTimer = setInterval(() => {
+    if (!ytPlayer || !ytPlayer.getDuration) return;
+    const dur = ytPlayer.getDuration() || 0;
+    const cur = ytPlayer.getCurrentTime() || 0;
+    const fill = document.getElementById('swipeProgressFill');
+    if (fill && dur) fill.style.width = (cur/dur*100) + '%';
+  }, 350);
+}
+function showRegionBlockedAndSkip(){
+  const stage = document.querySelector('.swipe-stage');
+  if (stage) {
+    const msg = document.createElement('div');
+    msg.className = 'swipe-region-msg';
+    msg.style.position = 'absolute'; msg.style.zIndex = '5'; msg.style.top = '50%'; msg.style.left = '50%'; msg.style.transform = 'translate(-50%,-50%)';
+    msg.textContent = "This trailer isn't available (often a region restriction) — skipping…";
+    stage.appendChild(msg);
+  }
+  setTimeout(() => advanceSwipe(), 1400);
+}
 function stripHtml(html){
   if (!html) return 'No synopsis available.';
   return html.replace(/<br\s*\/?>/gi,'\n').replace(/<\/?(i|b|em|strong)>/gi,'').replace(/<[^>]*>/g,'').trim();
@@ -715,15 +810,22 @@ function pumpBannerQueue(){
 }
 function loadGenreBanner(g){
   if (genreBannerCache[g] || genreBannerPending.has(g)) return;
+  const cachedPool = Cache.get('genrebanner:' + g, 3*DAY);
+  if (cachedPool && cachedPool.length) {
+    const media = cachedPool[Math.floor(Math.random()*cachedPool.length)];
+    const img = media?.bannerImage || media?.coverImage?.large;
+    if (img) { genreBannerCache[g] = img; return; }
+  }
   genreBannerPending.add(g);
   bannerLoadQueue.push(async () => {
     try {
       // pull a pool of ~30 popular titles for this genre in one request, pick one at random —
-      // more variety without firing extra network calls
+      // more variety without firing extra network calls, and cache the whole pool on-device
       const data = await alQuery(`query($genre:String){
         Page(page:1, perPage:30){ media(genre:$genre, sort:POPULARITY_DESC, type:ANIME, isAdult:false){ bannerImage coverImage{ large } } }
       }`, { genre: g });
       const pool = (data.Page.media || []).filter(m => m.bannerImage || m.coverImage?.large);
+      Cache.set('genrebanner:' + g, pool);
       const media = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
       const img = media?.bannerImage || media?.coverImage?.large;
       if (img) {
@@ -899,7 +1001,13 @@ function renderSwipe(){
       <div class="swipe-stage">
         ${!cur ? (s.loading ? spinnerHtml() : `<div class="empty">No more anime in this category yet.</div>`) : `
           <img class="bg" src="${cur.coverImage?.large||''}" alt="">
-          ${s.playing && trailerEmbed(cur.trailer) ? `<iframe src="${trailerEmbed(cur.trailer)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>` : `
+          ${s.playing && trailerVideoId(cur.trailer) ? `
+            <div id="swipeYtHost" style="position:relative;width:100%;height:100%;"></div>
+            <button class="swipe-tapzone" data-action="toggleSwipePlayback"></button>
+            <div class="swipe-pausehint" id="swipePauseHint"><svg viewBox="0 0 24 24" fill="#fff"><polygon points="6 3 20 12 6 21 6 3"/></svg></div>
+            <button class="swipe-mutebtn" data-action="toggleSwipeMute">${state.settings.swipeMuted ? muteIconSvg(true) : muteIconSvg(false)}</button>
+            <div class="swipe-progress"><div class="swipe-progress-fill" id="swipeProgressFill"></div></div>
+          ` : `
             <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding:0 24px;">
               <img src="${cur.coverImage?.large||''}" style="width:110px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.5);">
               <div style="font-weight:800;">${esc(titleOf(cur))}</div>
@@ -917,6 +1025,11 @@ function renderSwipe(){
       </div>
     </div>
   `;
+}
+function muteIconSvg(muted){
+  return muted
+    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`
+    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>`;
 }
 async function fetchSwipeMore(genre){
   const s = state.swipe;
@@ -1034,6 +1147,36 @@ const QUIZ_POOL = [
 function quizVisibleQuestions(answers){
   return QUIZ_POOL.filter(q => !q.skip || !q.skip(answers));
 }
+function quizCurrentScores(answers){
+  const scores = {};
+  Object.values(answers).forEach(a => { if (a.pts) Object.entries(a.pts).forEach(([g,w]) => { scores[g] = (scores[g]||0) + w; }); });
+  return scores;
+}
+// Not a fixed sequence: the opening two questions set a broad direction, then every question
+// after that is chosen based on which genres are currently leading — narrowing in on what you
+// actually want, the way Akinator narrows in on a guess, except here nothing is being guessed
+// at, we're steering toward a good recommendation instead.
+function pickNextQuestion(qz){
+  const remaining = quizVisibleQuestions(qz.answers).filter(q => !qz.askedIds.includes(q.id));
+  if (!remaining.length) return null;
+  if (!qz.askedIds.includes('mood')) { const q = remaining.find(x=>x.id==='mood'); if (q) return q; }
+  if (!qz.askedIds.includes('setting')) { const q = remaining.find(x=>x.id==='setting'); if (q) return q; }
+  const genreQs = remaining.filter(q => q.opts.some(o => o.pts));
+  const metaQs = remaining.filter(q => !q.opts.some(o => o.pts));
+  if (!genreQs.length) return metaQs[0] || null;
+  const scores = quizCurrentScores(qz.answers);
+  const leaders = Object.entries(scores).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>x[0]);
+  if (leaders.length) {
+    // prefer whichever remaining question could most affect the genres currently in the lead
+    const scored = genreQs.map(q => {
+      const touches = q.opts.some(o => o.pts && Object.keys(o.pts).some(g => leaders.includes(g)));
+      return { q, touches };
+    });
+    const relevant = scored.filter(s => s.touches).map(s => s.q);
+    if (relevant.length) return relevant[0];
+  }
+  return genreQs[0]; // nothing's leading yet (or no overlap left) — keep exploring breadth
+}
 function renderQuiz(){
   const qz = state.quiz;
   if (qz.done) {
@@ -1042,14 +1185,14 @@ function renderQuiz(){
       ${qz.loading ? spinnerHtml() : (qz.results.length ? `<div class="grid">${gridHtml(qz.results)}</div>` : `<div class="empty">Nothing matched — try different answers.</div>`)}
     `;
   }
-  const visible = quizVisibleQuestions(qz.answers);
-  const q = visible[qz.step];
+  const q = pickNextQuestion(qz);
   if (!q) { finishQuiz(); return spinnerHtml(); }
+  const totalEstimate = Math.max(quizVisibleQuestions(qz.answers).length, qz.askedIds.length + 1);
   return `
     <div style="padding:18px 16px 6px;">
-      <div class="section-title" style="margin:0 0 4px;">Question ${qz.step+1} of ~${visible.length}</div>
+      <div class="section-title" style="margin:0 0 4px;">Question ${qz.askedIds.length+1} of ~${totalEstimate}</div>
       <div style="height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin-bottom:18px;">
-        <div style="height:100%;width:${Math.round(((qz.step)/visible.length)*100)}%;background:var(--accent);"></div>
+        <div style="height:100%;width:${Math.round((qz.askedIds.length/totalEstimate)*100)}%;background:var(--accent);"></div>
       </div>
       <h2 style="font-size:18px;margin:0 0 16px;">${esc(q.q)}</h2>
       <div style="display:flex;flex-direction:column;gap:10px;">
@@ -1063,17 +1206,15 @@ function quizAnswer(qid, optIdx){
   const q = QUIZ_POOL.find(x => x.id === qid);
   const opt = q.opts[optIdx];
   qz.answers[qid] = { optIdx, ...opt };
-  qz.step++;
-  const visible = quizVisibleQuestions(qz.answers);
-  if (qz.step >= visible.length) finishQuiz(); else render();
+  qz.askedIds.push(qid);
+  if (pickNextQuestion(qz)) render(); else finishQuiz();
 }
 async function finishQuiz(){
   const qz = state.quiz;
   qz.done = true; qz.loading = true; render();
-  const scores = {};
+  const scores = quizCurrentScores(qz.answers);
   let maxEpisodes = null, sort = 'POPULARITY_DESC', format = null, minScore = null;
   Object.values(qz.answers).forEach(a => {
-    if (a.pts) Object.entries(a.pts).forEach(([g,w]) => { scores[g] = (scores[g]||0) + w; });
     if (a.meta) {
       if (a.meta.maxEpisodes) maxEpisodes = a.meta.maxEpisodes;
       if (a.meta.sort) sort = a.meta.sort;
@@ -1377,9 +1518,21 @@ function pumpFranchiseQueue(){
 }
 function ensureFranchiseCount(root){
   if (franchiseCache.has(root.id) || franchisePending.has(root.id)) return;
+  const cached = Cache.get('franchise:' + root.id, 14*DAY);
+  if (cached) {
+    franchiseCache.set(root.id, cached);
+    const el = document.querySelector(`.card[data-series-id="${root.id}"] .formattag`);
+    if (el) {
+      let label = `${cached.seasons.length} season${cached.seasons.length>1?'s':''}`;
+      if (cached.movies.length) label += ` · ${cached.movies.length} movie${cached.movies.length>1?'s':''}`;
+      el.textContent = label;
+    }
+    return;
+  }
   franchisePending.add(root.id);
   franchiseWalkQueue.push(() => walkFranchise(root).then(result => {
     franchiseCache.set(root.id, result);
+    Cache.set('franchise:' + root.id, result);
     franchisePending.delete(root.id);
     const el = document.querySelector(`.card[data-series-id="${root.id}"] .formattag`);
     if (el) {
@@ -1391,9 +1544,9 @@ function ensureFranchiseCount(root){
   pumpFranchiseQueue();
 }
 async function loadSeriesChain(rootId, root){
-  let result = franchiseCache.get(rootId);
+  let result = franchiseCache.get(rootId) || Cache.get('franchise:' + rootId, 14*DAY);
   try {
-    if (!result) { result = await walkFranchise(root); franchiseCache.set(rootId, result); }
+    if (!result) { result = await walkFranchise(root); franchiseCache.set(rootId, result); Cache.set('franchise:' + rootId, result); }
   } catch(e){ result = { seasons:[root], movies:[] }; /* show whatever we found so far */ }
   const c = state.modalStack.find(x => x.type==='series' && x.data.id===rootId);
   if (c) { c.seasons = result.seasons; c.movies = result.movies; c.loading = false; render(); }
@@ -1763,15 +1916,30 @@ document.addEventListener('click', async (ev) => {
     state.swipe = { genre: t.dataset.genre, mode: state.swipe.mode, queue:[], idx:0, page:1, playing:false, loading:false, error:null, seenPages:new Set() };
     render(); fetchSwipeMore(t.dataset.genre);
   }
-  else if (action === 'backSwipe') { state.swipe = { genre:null, mode: state.swipe.mode, queue:[], idx:0, page:1, playing:false, loading:false, error:null, seenPages:new Set() }; render(); }
+  else if (action === 'backSwipe') { destroySwipePlayer(); state.swipe = { genre:null, mode: state.swipe.mode, queue:[], idx:0, page:1, playing:false, loading:false, error:null, seenPages:new Set() }; render(); }
   else if (action === 'setDiscoverMode') { state.swipe.mode = t.dataset.mode; render(); }
   else if (action === 'playSwipe') {
     const cur = state.swipe.queue[state.swipe.idx];
     if (state.settings.openTrailerNewTab) { window.open(trailerWatch(cur.trailer), '_blank', 'noopener'); }
-    else { state.swipe.playing = true; render(); }
+    else {
+      state.swipe.playing = true; render();
+      const vid = trailerVideoId(cur.trailer);
+      if (vid) createSwipePlayer(vid);
+    }
   }
-  else if (action === 'swipeSkip') { advanceSwipe(); }
-  else if (action === 'swipeLike') { const c = state.swipe.queue[state.swipe.idx]; if (c) await doLike(c); advanceSwipe(); }
+  else if (action === 'toggleSwipePlayback') {
+    if (!ytPlayer || !ytPlayer.getPlayerState) return;
+    const hint = document.getElementById('swipePauseHint');
+    if (ytPlayer.getPlayerState() === 1) { ytPlayer.pauseVideo(); if (hint) hint.classList.add('show'); }
+    else { ytPlayer.playVideo(); if (hint) hint.classList.remove('show'); }
+  }
+  else if (action === 'toggleSwipeMute') {
+    state.settings.swipeMuted = !state.settings.swipeMuted; saveSettings();
+    if (ytPlayer) { state.settings.swipeMuted ? ytPlayer.mute() : ytPlayer.unMute(); }
+    render();
+  }
+  else if (action === 'swipeSkip') { destroySwipePlayer(); advanceSwipe(); }
+  else if (action === 'swipeLike') { destroySwipePlayer(); const c = state.swipe.queue[state.swipe.idx]; if (c) await doLike(c); advanceSwipe(); }
   else if (action === 'swipePlan') {
     const c = state.swipe.queue[state.swipe.idx];
     if (c) {
@@ -1782,7 +1950,7 @@ document.addEventListener('click', async (ev) => {
 
   else if (action === 'myTab') { state.mylist.tab = t.dataset.key; render(); }
   else if (action === 'quizAnswer') { quizAnswer(t.dataset.qid, Number(t.dataset.oidx)); }
-  else if (action === 'quizRestart') { state.quiz = { step:0, answers:{}, done:false, loading:false, results:[] }; render(); }
+  else if (action === 'quizRestart') { state.quiz = { askedIds:[], answers:{}, done:false, loading:false, results:[] }; render(); }
 
   else if (action === 'connectAL') {
     const cid = document.getElementById('alCidInput').value.trim();
@@ -1853,7 +2021,7 @@ document.addEventListener('input', (ev) => {
     render();
   }
 });
-function advanceSwipe(){ state.swipe.playing = false; state.swipe.idx++; if (state.swipe.queue.length - state.swipe.idx < 5 && state.swipe.genre) fetchSwipeMore(state.swipe.genre); render(); }
+function advanceSwipe(){ destroySwipePlayer(); state.swipe.playing = false; state.swipe.idx++; if (state.swipe.queue.length - state.swipe.idx < 5 && state.swipe.genre) fetchSwipeMore(state.swipe.genre); render(); }
 
 document.getElementById('tabs').addEventListener('click', (ev) => {
   const b = ev.target.closest('button[data-tab]');
@@ -1865,11 +2033,14 @@ document.getElementById('tabs').addEventListener('click', (ev) => {
 
 /* ============================== INIT ============================== */
 (async function init(){
+  const cachedGenres = Cache.get('genres', 7*DAY);
+  if (cachedGenres) state.genres = cachedGenres;
   try {
     const data = await alQuery(`query{ GenreCollection }`, {});
     state.genres = (data.GenreCollection || []).filter(g => g !== 'Hentai');
+    Cache.set('genres', state.genres);
   } catch(e) {
-    state.genresError = 'Could not load categories from AniList: ' + e.message;
+    if (!cachedGenres) state.genresError = 'Could not load categories from AniList: ' + e.message;
   }
   if (state.anilist?.token && !state.anilist.user) {
     try { const u = await alFetchViewer(); state.anilist.user = u; state.anilist.scoreFormat = u.mediaListOptions?.scoreFormat || 'POINT_10'; LS.set('al_auth', state.anilist); } catch(e){}
